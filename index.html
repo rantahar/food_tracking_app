@@ -85,7 +85,7 @@
 
             <section class="text-center my-8">
                 <h2 class="text-2xl font-bold text-gray-900">Estimated Daily Calories</h2>
-                <p class="text-4xl font-bold text-teal-700 mt-2"><span id="total-calories">0</span> kcal</p>
+                <p class="text-4xl font-bold text-teal-700 mt-2" id="total-calories-text"><span id="total-calories-current">0</span> / <span id="total-calories-target">0</span> kcal</p>
             </section>
 
             <section class="mb-8">
@@ -189,7 +189,7 @@
     </div>
 
     <script>
-        const portionCalories = { protein: 150, veggies: 35, carbs: 120, fat: 100 };
+        const portionCalories = { protein: 145, veggies: 25, carbs: 120, fat: 100 };
         let trackerData = {
             protein: { current: 0, target: 4 },
             veggies: { current: 0, target: 5 },
@@ -211,6 +211,15 @@
             return total;
         }
 
+        function calculateTotalTargetCalories() {
+            let total = 0;
+            total += trackerData.protein.target * portionCalories.protein;
+            total += trackerData.veggies.target * portionCalories.veggies;
+            total += trackerData.carbs.target * portionCalories.carbs;
+            total += trackerData.fat.target * portionCalories.fat;
+            return total;
+        }
+
         function updateDisplay() {
             for (const key in trackerData) {
                 const { current, target } = trackerData[key];
@@ -227,7 +236,19 @@
                     currentElement.parentElement.classList.add('text-gray-800');
                 }
             }
-            document.getElementById('total-calories').textContent = calculateTotalCalories();
+
+            const totalCalories = calculateTotalCalories();
+            const targetCalories = calculateTotalTargetCalories(); 
+            document.getElementById('total-calories-current').textContent = totalCalories;
+            document.getElementById('total-calories-target').textContent = targetCalories;
+            if (totalCalories > targetCalories) {
+                document.getElementById('total-calories-text').classList.add('text-gray-600');
+                document.getElementById('total-calories-text').classList.remove('text-teal-700');
+            } else {
+                document.getElementById('total-calories-text').classList.remove('text-gray-600');
+                document.getElementById('total-calories-text').classList.add('text-teal-700');
+            }
+
             renderCommonItemButtons();
             renderManageItemsList();
             saveState();
