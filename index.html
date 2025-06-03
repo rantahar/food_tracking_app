@@ -101,6 +101,11 @@
                 </div>
             </section>
 
+            <section class="text-center my-8">
+                <h2 class="text-2xl font-bold text-gray-900">Estimated Daily Calories</h2>
+                <p class="text-4xl font-bold text-teal-700 mt-2"><span id="total-calories">0</span> kcal</p>
+            </section>
+
             <section class="mb-8">
                 <h2 class="text-2xl font-bold text-center mb-4 text-gray-900">Quick Add Common Items</h2>
                 <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -214,6 +219,13 @@
     </div>
 
     <script>
+        const portionCalories = {
+            protein: 150, // Approx. calories per Palm
+            veggies: 35,  // Approx. calories per Fist
+            carbs: 120,   // Approx. calories per Cupped Hand
+            fat: 100      // Approx. calories per Thumb
+        };
+
         const trackerData = {
             protein: { current: 0, target: 4 },
             veggies: { current: 0, target: 5 },
@@ -247,7 +259,20 @@
                     currentElement.parentElement.classList.add('text-gray-800');
                 }
             }
+            
+            const totalCalories = calculateTotalCalories();
+            document.getElementById('total-calories').textContent = totalCalories;
+
             saveState();
+        }
+
+        function calculateTotalCalories() {
+            let totalCalories = 0;
+            totalCalories += trackerData.protein.current * portionCalories.protein;
+            totalCalories += trackerData.veggies.current * portionCalories.veggies;
+            totalCalories += trackerData.carbs.current * portionCalories.carbs;
+            totalCalories += trackerData.fat.current * portionCalories.fat;
+            return totalCalories;
         }
 
         function addPortion(type, amount) {
