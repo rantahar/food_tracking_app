@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hand-Portion Daily Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+        .progress-bar { appearance: none; -webkit-appearance: none; }
+        .progress-bar::-webkit-progress-bar { background-color: #e5e7eb; border-radius: 0.5rem; }
+        .progress-bar::-webkit-progress-value { background-color: #348a7b; border-radius: 0.5rem; transition: width 0.3s ease-in-out; }
+        .modal { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
+        .modal-content { transition: transform 0.3s ease-in-out; }
+        .btn-control {
+            background-color: #eef2f1;
+            color: #374151;
+            border: 1px solid #d1d5db;
+        }
+        .btn-control:hover {
+            background-color: #e5e7eb;
+        }
+        .btn-main {
+             background-color: #348a7b;
+             color: white;
+        }
+        .btn-main:hover {
+            background-color: #2a7062;
+        }
+        .btn-secondary {
+            background-color: #f0f0e6;
+            border: 1px solid #dcdccd;
+            color: #348a7b;
+        }
+        .btn-secondary:hover {
+            background-color: #e9e9d9;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Hand-Portion Daily Tracker</h1>
+            <p class="text-gray-600 mt-2">Log your daily portions to stay on track with your goals.</p>
+        </header>
+
+        <main>
+            <section id="trackers" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">💪</span> Protein</h2>
+                    <div class="text-2xl font-bold mb-2"><span id="protein-current">0</span> / <span id="protein-target">4</span> Palms</div>
+                    <progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="4"></progress>
+                    <div class="grid grid-cols-4 gap-2 mt-auto">
+                        <button onclick="addPortion('protein', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
+                        <button onclick="addPortion('protein', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
+                        <button onclick="addPortion('protein', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
+                        <button onclick="addPortion('protein', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥗</span> Veggies</h2>
+                    <div class="text-2xl font-bold mb-2"><span id="veggies-current">0</span> / <span id="veggies-target">5</span>+ Fists</div>
+                    <progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="5"></progress>
+                    <div class="grid grid-cols-2 gap-2 mt-auto">
+                        <button onclick="addPortion('veggies', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
+                        <button onclick="addPortion('veggies', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🍞</span> Carbs</h2>
+                    <div class="text-2xl font-bold mb-2"><span id="carbs-current">0</span> / <span id="carbs-target">8</span> Cupped Hands</div>
+                    <progress id="carbs-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="8"></progress>
+                    <div class="grid grid-cols-4 gap-2 mt-auto">
+                        <button onclick="addPortion('carbs', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
+                        <button onclick="addPortion('carbs', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
+                        <button onclick="addPortion('carbs', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
+                        <button onclick="addPortion('carbs', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥑</span> Fat</h2>
+                    <div class="text-2xl font-bold mb-2"><span id="fat-current">0</span> / <span id="fat-target">6</span> Thumbs</div>
+                    <progress id="fat-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="6"></progress>
+                    <div class="grid grid-cols-4 gap-2 mt-auto">
+                        <button onclick="addPortion('fat', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
+                        <button onclick="addPortion('fat', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
+                        <button onclick="addPortion('fat', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
+                        <button onclick="addPortion('fat', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <h2 class="text-2xl font-bold text-center mb-4 text-gray-900">Quick Add Common Items</h2>
+                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <button onclick="logCommonItem('breakfast')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Breakfast</button>
+                    <button onclick="logCommonItem('plenny400')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Plenny (400kcal)</button>
+                    <button onclick="logCommonItem('plenny600')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Plenny (600kcal)</button>
+                    <button onclick="logCommonItem('proteinBar')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Protein Bar</button>
+                    <button onclick="logCommonItem('croissant')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Croissant</button>
+                    <button onclick="logCommonItem('egg')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">One Egg</button>
+                    <button onclick="logCommonItem('oatMilk200')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Oat Milk (200ml)</button>
+                </div>
+            </section>
+
+            <section class="text-center">
+                <button id="reset-day" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-4">Reset Day</button>
+                <button id="show-cheat-sheet" class="btn-secondary font-bold py-2 px-6 rounded-lg">View Cheat Sheet</button>
+            </section>
+        </main>
+    </div>
+
+    <div id="cheat-sheet-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="modal-content bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95 overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">Hand-Portion System Reference</h2>
+                <button id="close-cheat-sheet" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Daily Hand-Portion Cheat Sheet (~2200 kcal)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3 font-semibold">Feature / Hand Portion</th>
+                                    <th class="p-3 font-semibold">Palm</th>
+                                    <th class="p-3 font-semibold">Fist</th>
+                                    <th class="p-3 font-semibold">Cupped Hand</th>
+                                    <th class="p-3 font-semibold">Thumb (full)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Measures Primarily...</td>
+                                    <td class="p-3">Protein-rich foods</td>
+                                    <td class="p-3">Non-starchy Vegetables</td>
+                                    <td class="p-3">Carbohydrate-rich foods</td>
+                                    <td class="p-3">Fat-rich foods</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Approx. Primary Nutrient / Portion</td>
+                                    <td class="p-3">~25g Protein</td>
+                                    <td class="p-3">~7g Carbs (mainly fiber)</td>
+                                    <td class="p-3">~25g Carbohydrates</td>
+                                    <td class="p-3">~11g Fat</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Approx. Calories / Portion</td>
+                                    <td class="p-3">~150 kcal</td>
+                                    <td class="p-3">~35 kcal</td>
+                                    <td class="p-3">~120 kcal</td>
+                                    <td class="p-3">~100 kcal</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium">Your Daily Target</td>
+                                    <td class="p-3 font-bold text-teal-700">4 Palms</td>
+                                    <td class="p-3 font-bold text-teal-700">5+ Fists</td>
+                                    <td class="p-3 font-bold text-teal-700">8 Cupped Hands</td>
+                                    <td class="p-3 font-bold text-teal-700">6 Thumbs</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Common Items – Hand Portion Estimates</h3>
+                     <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="p-3 font-semibold">Hand Portion / Item</th>
+                                    <th class="p-3 font-semibold">Your Breakfast</th>
+                                    <th class="p-3 font-semibold">Oat Milk (200ml)</th>
+                                    <th class="p-3 font-semibold">Plenny (600 kcal)</th>
+                                    <th class="p-3 font-semibold">Plenny (400 kcal)</th>
+                                    <th class="p-3 font-semibold">Protein Bar</th>
+                                    <th class="p-3 font-semibold">Croissant</th>
+                                    <th class="p-3 font-semibold">One Egg</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Protein (Palms)</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">0</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0.5</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Vegetables (Fists)</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td>
+                                </tr>
+                                <tr class="border-b">
+                                    <td class="p-3 font-medium">Carbohydrates (Cupped Hands)</td><td class="p-3 text-center">2.5</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">2.5</td><td class="p-3 text-center">2</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-3 font-medium">Fat (Thumbs)</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">1.5</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const trackerData = {
+            protein: { current: 0, target: 4 },
+            veggies: { current: 0, target: 5 },
+            carbs: { current: 0, target: 8 },
+            fat: { current: 0, target: 6 },
+        };
+
+        const commonItems = {
+            breakfast: { p: 0.5, v: 0, c: 2.5, f: 1 },
+            oatMilk200: { p: 0, v: 0, c: 0.5, f: 0.5 },
+            plenny600: { p: 1, v: 0, c: 2.5, f: 1.5 },
+            plenny400: { p: 0.5, v: 0, c: 2, f: 1 },
+            proteinBar: { p: 1, v: 0, c: 1, f: 1 },
+            croissant: { p: 0, v: 0, c: 1, f: 1 },
+            egg: { p: 0.5, v: 0, c: 0, f: 0 },
+        };
+
+        function updateDisplay() {
+            for (const key in trackerData) {
+                const { current, target } = trackerData[key];
+                document.getElementById(`${key}-current`).textContent = current;
+                const progressElement = document.getElementById(`${key}-progress`);
+                progressElement.value = current;
+                
+                const currentElement = document.getElementById(`${key}-current`);
+                if (current > target) {
+                    currentElement.parentElement.classList.add('text-red-600');
+                    currentElement.parentElement.classList.remove('text-gray-800');
+                } else {
+                    currentElement.parentElement.classList.remove('text-red-600');
+                    currentElement.parentElement.classList.add('text-gray-800');
+                }
+            }
+            saveState();
+        }
+
+        function addPortion(type, amount) {
+            trackerData[type].current += amount;
+            if (trackerData[type].current < 0) {
+                trackerData[type].current = 0;
+            }
+            updateDisplay();
+        }
+
+        function logCommonItem(itemName) {
+            const item = commonItems[itemName];
+            if (!item) return;
+
+            addPortion('protein', item.p);
+            addPortion('veggies', item.v);
+            addPortion('carbs', item.c);
+            addPortion('fat', item.f);
+        }
+
+        function resetDay() {
+            if (confirm("Are you sure you want to reset all counts for the day?")) {
+                for (const key in trackerData) {
+                    trackerData[key].current = 0;
+                }
+                updateDisplay();
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('handPortionTrackerState', JSON.stringify(trackerData));
+        }
+
+        function loadState() {
+            const savedState = localStorage.getItem('handPortionTrackerState');
+            if (savedState) {
+                const loadedData = JSON.parse(savedState);
+                Object.assign(trackerData, loadedData);
+            }
+            updateDisplay();
+        }
+
+        document.getElementById('reset-day').addEventListener('click', resetDay);
+        
+        const modal = document.getElementById('cheat-sheet-modal');
+        const modalContent = modal.querySelector('.modal-content');
+        document.getElementById('show-cheat-sheet').addEventListener('click', () => {
+            modal.classList.remove('invisible', 'opacity-0');
+            modalContent.classList.remove('scale-95');
+        });
+
+        const closeModal = () => {
+            modalContent.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('invisible');
+            }, 300);
+        };
+
+        document.getElementById('close-cheat-sheet').addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+        
+        document.addEventListener('DOMContentLoaded', loadState);
+    </script>
+</body>
+</html>
