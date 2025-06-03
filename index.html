@@ -140,19 +140,19 @@
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label for="protein-target" class="block text-sm font-medium text-gray-700">Protein Target (Palms)</label>
-                    <input type="number" id="protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1" oninput="updateProteinTarget(this.value)">
+                    <input type="number" id="form-protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1" oninput="updateProteinTarget(this.value)">
                 </div>
                 <div>
                     <label for="veggies-target" class="block text-sm font-medium text-gray-700">Veggies Target (Fists)</label>
-                    <input type="number" id="veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1" oninput="updateVeggiesTarget(this.value)">
+                    <input type="number" id="form-veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1" oninput="updateVeggiesTarget(this.value)">
                 </div>
                 <div>
                     <label for="carbs-target" class="block text-sm font-medium text-gray-700">Carbs Target (Cupped)</label>
-                    <input type="number" id="carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1" oninput="updateCarbsTarget(this.value)">
+                    <input type="number" id="form-carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1" oninput="updateCarbsTarget(this.value)">
                 </div>
                 <div>
                     <label for="fat-target" class="block text-sm font-medium text-gray-700">Fat Target (Thumbs)</label>
-                    <input type="number" id="fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1" oninput="updateFatTarget(this.value)">
+                    <input type="number" id="form-fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1" oninput="updateFatTarget(this.value)">
                 </div>
                 <div>
                     <label for="hand-size" class="block text-sm font-medium text-gray-700">Hand Size (for rough calorie estimate)</label>
@@ -205,9 +205,9 @@
         let selectedHandSize = 'medium';
 
         let trackerData = {
-            protein: { current: 0, target: 4 },
-            veggies: { current: 0, target: 5 },
-            carbs: { current: 0, target: 8 },
+            protein: { current: 0, target: 5 },
+            veggies: { current: 0, target: 7 },
+            carbs: { current: 0, target: 9 },
             fat: { current: 0, target: 6 },
         };
         let commonItems = {
@@ -237,13 +237,15 @@
         }
 
         function updateDisplay() {
-            for (const key in trackerData) {
+            for (const key of ['protein', 'veggies', 'carbs', 'fat']) {
                 const { current, target } = trackerData[key];
                 document.getElementById(`${key}-current`).textContent = current;
                 const progressElement = document.getElementById(`${key}-progress`);
                 progressElement.value = current;
                 const currentElement = document.getElementById(`${key}-current`);
-                const actualTarget = (key === 'veggies' && target === 5) ? Infinity : target;
+                const targetElement = document.getElementById(`${key}-target`);
+                targetElement.textContent = target;
+                const actualTarget = (key === 'veggies') ? Infinity : target;
                 if (current > actualTarget && key !== 'veggies') {
                     currentElement.parentElement.classList.add('text-red-600');
                     currentElement.parentElement.classList.remove('text-gray-800');
@@ -345,15 +347,7 @@
             if (editItemName && editItemName !== name) {
                 delete commonItems[editItemName];
             }
-
             commonItems[name] = { p, v, c, f };
-            trackerData.protein.target = proteinTarget;
-            trackerData.veggies.target = veggiesTarget;
-            trackerData.carbs.target = carbsTarget;
-            trackerData.fat.target = fatTarget;
-            trackerData.handSize = handSize;
-
-            selectedHandSize = handSize;
 
             this.reset();
             document.getElementById('edit-item-name').value = '';
@@ -363,17 +357,17 @@
         });
 
         function updateProteinTarget(value) {
-            trackerData.protein.target = parseFloat(value) || 4;
+            trackerData.protein.target = parseFloat(value) || 5;
             updateDisplay();
         }
 
         function updateVeggiesTarget(value) {
-            trackerData.veggies.target = parseFloat(value) || 5;
+            trackerData.veggies.target = parseFloat(value) || 7;
             updateDisplay();
         }
 
         function updateCarbsTarget(value) {
-            trackerData.carbs.target = parseFloat(value) || 8;
+            trackerData.carbs.target = parseFloat(value) || 9;
             updateDisplay();
         }
 
@@ -391,11 +385,6 @@
         function populateEditForm(name) {
             const item = commonItems[name];
             if (!item) return;
-            document.getElementById('protein-target').value = trackerData.protein.target;
-            document.getElementById('veggies-target').value = trackerData.veggies.target;
-            document.getElementById('carbs-target').value = trackerData.carbs.target;
-            document.getElementById('fat-target').value = trackerData.fat.target;
-            document.getElementById('edit-item-name').value = name;
             document.getElementById('item-name').value = name;
             document.getElementById('item-p').value = item.p;
             document.getElementById('item-v').value = item.v;
@@ -441,8 +430,16 @@
                     if (loadedData.hasOwnProperty(key) && loadedData[key].hasOwnProperty('current')) {
                         trackerData[key].current = loadedData[key].current;
                     }
+                    if (loadedData.hasOwnProperty(key) && loadedData[key].hasOwnProperty('target')) {
+                        trackerData[key].target = loadedData[key].target;
+                    }
+                    const formElement = document.getElementById(`form-${key}-target`);
+                    if (formElement) {
+                        formElement.value = loadedData[key].target;
+                    }
                 }
-                const handSize = trackerData.handSize || 'medium';
+                const handSize = loadedData.handSize || 'medium';
+                trackerData.handSize = handSize;
                 selectedHandSize = handSize;
             }
             const savedCommonItems = localStorage.getItem('handPortionCommonItems');
