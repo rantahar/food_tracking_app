@@ -35,13 +35,12 @@
         
         <header class="text-center mb-8">
             <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Hand-Portion Daily Tracker</h1>
-            <p class="text-gray-600 mt-2">Log your daily portions to stay on track with your goals.</p>
         </header>
 
         <main>
             <section id="trackers" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
                 <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
-                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">💪</span> Protein</h2>
+                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🍗</span> Protein</h2>
                     <div class="text-2xl font-bold mb-2"><span id="protein-current">0</span> / <span id="protein-target">4</span> Palms</div>
                     <progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="4"></progress>
                     <div class="grid grid-cols-4 gap-2 mt-auto">
@@ -97,7 +96,7 @@
 
             <section class="text-center">
                 <button id="reset-day" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Reset Day</button>
-                <button id="manage-items-btn" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Manage Items</button>
+                <button id="manage-btn" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Manage</button>
                 <button id="show-cheat-sheet" class="btn-secondary font-bold py-2 px-6 rounded-lg">View Cheat Sheet</button>
             </section>
         </main>
@@ -111,7 +110,7 @@
             </div>
             <div class="space-y-6">
                 <div>
-                    <h3 class="text-xl font-semibold mb-2">Daily Hand-Portion Cheat Sheet (~2200 kcal)</h3>
+                    <h3 class="text-xl font-semibold mb-2">Daily Hand-Portion Cheat Sheet</h3>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-100">
@@ -123,7 +122,6 @@
                                 <tr class="border-b"><td class="p-3 font-medium">Measures Primarily...</td><td class="p-3">Protein-rich foods</td><td class="p-3">Non-starchy Vegetables</td><td class="p-3">Carbohydrate-rich foods</td><td class="p-3">Fat-rich foods</td></tr>
                                 <tr class="border-b"><td class="p-3 font-medium">Approx. Primary Nutrient / Portion</td><td class="p-3">~25g Protein</td><td class="p-3">~7g Carbs (mainly fiber)</td><td class="p-3">~25g Carbohydrates</td><td class="p-3">~11g Fat</td></tr>
                                 <tr class="border-b"><td class="p-3 font-medium">Approx. Calories / Portion</td><td class="p-3">~150 kcal</td><td class="p-3">~35 kcal</td><td class="p-3">~120 kcal</td><td class="p-3">~100 kcal</td></tr>
-                                <tr><td class="p-3 font-medium">Your Daily Target</td><td class="p-3 font-bold text-teal-700">4 Palms</td><td class="p-3 font-bold text-teal-700">5+ Fists</td><td class="p-3 font-bold text-teal-700">8 Cupped Hands</td><td class="p-3 font-bold text-teal-700">6 Thumbs</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -132,14 +130,35 @@
         </div>
     </div>
 
-    <div id="manage-items-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+    <div id="manage-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
         <div class="modal-content bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95 overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Manage Common Items</h2>
-                <button id="close-manage-items" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
+                <h2 class="text-2xl font-bold">Manage</h2>
+                <button id="close-manage" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
             </div>
-            <form id="common-item-form" class="space-y-4 mb-6">
+            <form id="manage-form" class="space-y-4 mb-6">
                 <input type="hidden" id="edit-item-name" value="">
+                <h3 class="text-lg font-semibold text-gray-800">Daily Targets</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="protein-target" class="block text-sm font-medium text-gray-700">Protein Target (Palms)</label>
+                        <input type="number" id="protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="veggies-target" class="block text-sm font-medium text-gray-700">Veggies Target (Fists)</label>
+                        <input type="number" id="veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="carbs-target" class="block text-sm font-medium text-gray-700">Carbs Target (Cupped)</label>
+                        <input type="number" id="carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="fat-target" class="block text-sm font-medium text-gray-700">Fat Target (Thumbs)</label>
+                        <input type="number" id="fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1">
+                    </div>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-800">Common Items</h3>
                 <div>
                     <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
                     <input type="text" id="item-name" name="item-name" required class="input-field mt-1">
@@ -267,13 +286,17 @@
             });
         }
 
-        document.getElementById('common-item-form').addEventListener('submit', function(event) {
+        document.getElementById('manage-form').addEventListener('submit', function(event) {
             event.preventDefault();
             const name = document.getElementById('item-name').value.trim();
             const p = parseFloat(document.getElementById('item-p').value) || 0;
             const v = parseFloat(document.getElementById('item-v').value) || 0;
             const c = parseFloat(document.getElementById('item-c').value) || 0;
             const f = parseFloat(document.getElementById('item-f').value) || 0;
+            const proteinTarget = parseFloat(document.getElementById('protein-target').value) || 4;
+            const veggiesTarget = parseFloat(document.getElementById('veggies-target').value) || 5;
+            const carbsTarget = parseFloat(document.getElementById('carbs-target').value) || 8;
+            const fatTarget = parseFloat(document.getElementById('fat-target').value) || 6;
             const editItemName = document.getElementById('edit-item-name').value;
 
             if (!name) {
@@ -285,23 +308,31 @@
                 alert("An item with this new name already exists. Please choose a different name.");
                 return;
             }
-            
+
             if (editItemName && editItemName !== name) {
-                delete commonItems[editItemName]; 
+                delete commonItems[editItemName];
             }
-            
+
             commonItems[name] = { p, v, c, f };
-            
+            trackerData.protein.target = proteinTarget;
+            trackerData.veggies.target = veggiesTarget;
+            trackerData.carbs.target = carbsTarget;
+            trackerData.fat.target = fatTarget;
+
             this.reset();
             document.getElementById('edit-item-name').value = '';
             document.getElementById('save-item-btn').textContent = 'Add Item';
             updateDisplay();
-            closeModal('manage-items-modal');
+            closeModal('manage-modal');
         });
 
         function populateEditForm(name) {
             const item = commonItems[name];
             if (!item) return;
+            document.getElementById('protein-target').value = trackerData.protein.target;
+            document.getElementById('veggies-target').value = trackerData.veggies.target;
+            document.getElementById('carbs-target').value = trackerData.carbs.target;
+            document.getElementById('fat-target').value = trackerData.fat.target;
             document.getElementById('edit-item-name').value = name;
             document.getElementById('item-name').value = name;
             document.getElementById('item-p').value = item.p;
@@ -309,7 +340,7 @@
             document.getElementById('item-c').value = item.c;
             document.getElementById('item-f').value = item.f;
             document.getElementById('save-item-btn').textContent = 'Update Item';
-            openModal('manage-items-modal');
+            openModal('manage-modal');
         }
 
         function deleteCommonItem(name) {
@@ -364,15 +395,15 @@
             if (e.target === document.getElementById('cheat-sheet-modal')) closeModal('cheat-sheet-modal');
         });
 
-        document.getElementById('manage-items-btn').addEventListener('click', () => {
-            document.getElementById('common-item-form').reset();
+        document.getElementById('manage-btn').addEventListener('click', () => {
+            document.getElementById('manage-form').reset();
             document.getElementById('edit-item-name').value = '';
             document.getElementById('save-item-btn').textContent = 'Add Item';
-            openModal('manage-items-modal');
+            openModal('manage-modal');
         });
-        document.getElementById('close-manage-items').addEventListener('click', () => closeModal('manage-items-modal'));
-        document.getElementById('manage-items-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('manage-items-modal')) closeModal('manage-items-modal');
+        document.getElementById('close-manage').addEventListener('click', () => closeModal('manage-modal'));
+        document.getElementById('manage-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('manage-modal')) closeModal('manage-modal');
         });
         
         document.addEventListener('DOMContentLoaded', loadState);
