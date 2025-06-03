@@ -136,28 +136,36 @@
                 <h2 class="text-2xl font-bold">Manage</h2>
                 <button id="close-manage" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
             </div>
+            <h3 class="text-lg font-semibold text-gray-800">Daily Targets</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="protein-target" class="block text-sm font-medium text-gray-700">Protein Target (Palms)</label>
+                    <input type="number" id="protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1" oninput="updateProteinTarget(this.value)">
+                </div>
+                <div>
+                    <label for="veggies-target" class="block text-sm font-medium text-gray-700">Veggies Target (Fists)</label>
+                    <input type="number" id="veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1" oninput="updateVeggiesTarget(this.value)">
+                </div>
+                <div>
+                    <label for="carbs-target" class="block text-sm font-medium text-gray-700">Carbs Target (Cupped)</label>
+                    <input type="number" id="carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1" oninput="updateCarbsTarget(this.value)">
+                </div>
+                <div>
+                    <label for="fat-target" class="block text-sm font-medium text-gray-700">Fat Target (Thumbs)</label>
+                    <input type="number" id="fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1" oninput="updateFatTarget(this.value)">
+                </div>
+                <div>
+                    <label for="hand-size" class="block text-sm font-medium text-gray-700">Hand Size (for rough calorie estimate)</label>
+                    <select id="hand-size" class="input-field mt-1" onchange="updateHandSize(this.value)">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+            </div>
+
             <form id="manage-form" class="space-y-4 mb-6">
                 <input type="hidden" id="edit-item-name" value="">
-                <h3 class="text-lg font-semibold text-gray-800">Daily Targets</h3>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="protein-target" class="block text-sm font-medium text-gray-700">Protein Target (Palms)</label>
-                        <input type="number" id="protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="veggies-target" class="block text-sm font-medium text-gray-700">Veggies Target (Fists)</label>
-                        <input type="number" id="veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="carbs-target" class="block text-sm font-medium text-gray-700">Carbs Target (Cupped)</label>
-                        <input type="number" id="carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="fat-target" class="block text-sm font-medium text-gray-700">Fat Target (Thumbs)</label>
-                        <input type="number" id="fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1">
-                    </div>
-                </div>
-
                 <h3 class="text-lg font-semibold text-gray-800">Common Items</h3>
                 <div>
                     <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
@@ -189,7 +197,13 @@
     </div>
 
     <script>
-        const portionCalories = { protein: 145, veggies: 25, carbs: 120, fat: 100 };
+        const portionCaloriesByHand = {
+            small: { protein: 130, veggies: 25, carbs: 110, fat: 90 },
+            medium: { protein: 138, veggies: 25, carbs: 115, fat: 95 },
+            large: { protein: 145, veggies: 25, carbs: 120, fat: 100 },
+        };
+        let selectedHandSize = 'medium';
+
         let trackerData = {
             protein: { current: 0, target: 4 },
             veggies: { current: 0, target: 5 },
@@ -204,6 +218,7 @@
 
         function calculateTotalCalories() {
             let total = 0;
+            let portionCalories = portionCaloriesByHand[selectedHandSize];
             total += trackerData.protein.current * portionCalories.protein;
             total += trackerData.veggies.current * portionCalories.veggies;
             total += trackerData.carbs.current * portionCalories.carbs;
@@ -213,6 +228,7 @@
 
         function calculateTotalTargetCalories() {
             let total = 0;
+            let portionCalories = portionCaloriesByHand[selectedHandSize];
             total += trackerData.protein.target * portionCalories.protein;
             total += trackerData.veggies.target * portionCalories.veggies;
             total += trackerData.carbs.target * portionCalories.carbs;
@@ -314,10 +330,6 @@
             const v = parseFloat(document.getElementById('item-v').value) || 0;
             const c = parseFloat(document.getElementById('item-c').value) || 0;
             const f = parseFloat(document.getElementById('item-f').value) || 0;
-            const proteinTarget = parseFloat(document.getElementById('protein-target').value) || 4;
-            const veggiesTarget = parseFloat(document.getElementById('veggies-target').value) || 5;
-            const carbsTarget = parseFloat(document.getElementById('carbs-target').value) || 8;
-            const fatTarget = parseFloat(document.getElementById('fat-target').value) || 6;
             const editItemName = document.getElementById('edit-item-name').value;
 
             if (!name) {
@@ -339,6 +351,9 @@
             trackerData.veggies.target = veggiesTarget;
             trackerData.carbs.target = carbsTarget;
             trackerData.fat.target = fatTarget;
+            trackerData.handSize = handSize;
+
+            selectedHandSize = handSize;
 
             this.reset();
             document.getElementById('edit-item-name').value = '';
@@ -346,6 +361,31 @@
             updateDisplay();
             closeModal('manage-modal');
         });
+
+        function updateProteinTarget(value) {
+            trackerData.protein.target = parseFloat(value) || 4;
+            updateDisplay();
+        }
+
+        function updateVeggiesTarget(value) {
+            trackerData.veggies.target = parseFloat(value) || 5;
+            updateDisplay();
+        }
+
+        function updateCarbsTarget(value) {
+            trackerData.carbs.target = parseFloat(value) || 8;
+            updateDisplay();
+        }
+
+        function updateFatTarget(value) {
+            trackerData.fat.target = parseFloat(value) || 6;
+            updateDisplay();
+        }
+
+        function updateHandSize(value) {
+            selectedHandSize = value;
+            updateDisplay();
+        }
 
         function populateEditForm(name) {
             const item = commonItems[name];
@@ -401,6 +441,8 @@
                         trackerData[key].current = loadedData[key].current;
                     }
                 }
+                const handSize = trackerData.handSize || 'medium';
+                selectedHandSize = handSize;
             }
             const savedCommonItems = localStorage.getItem('handPortionCommonItems');
             if (savedCommonItems) {
