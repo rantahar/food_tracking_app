@@ -19,29 +19,15 @@
         .progress-bar::-webkit-progress-value { background-color: #348a7b; border-radius: 0.5rem; transition: width 0.3s ease-in-out; }
         .modal { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
         .modal-content { transition: transform 0.3s ease-in-out; }
-        .btn-control {
-            background-color: #eef2f1;
-            color: #374151;
-            border: 1px solid #d1d5db;
-        }
-        .btn-control:hover {
-            background-color: #e5e7eb;
-        }
-        .btn-main {
-             background-color: #348a7b;
-             color: white;
-        }
-        .btn-main:hover {
-            background-color: #2a7062;
-        }
-        .btn-secondary {
-            background-color: #f0f0e6;
-            border: 1px solid #dcdccd;
-            color: #348a7b;
-        }
-        .btn-secondary:hover {
-            background-color: #e9e9d9;
-        }
+        .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; }
+        .btn-control:hover { background-color: #e5e7eb; }
+        .btn-main { background-color: #348a7b; color: white; }
+        .btn-main:hover { background-color: #2a7062; }
+        .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+        .btn-secondary:hover { background-color: #e9e9d9; }
+        .btn-danger { background-color: #ef4444; color: white; }
+        .btn-danger:hover { background-color: #dc2626; }
+        .input-field { border: 1px solid #d1d5db; padding: 0.5rem; border-radius: 0.5rem; width: 100%; }
     </style>
 </head>
 <body class="text-gray-800">
@@ -65,7 +51,6 @@
                         <button onclick="addPortion('protein', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
                     </div>
                 </div>
-
                 <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
                     <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥗</span> Veggies</h2>
                     <div class="text-2xl font-bold mb-2"><span id="veggies-current">0</span> / <span id="veggies-target">5</span>+ Fists</div>
@@ -75,7 +60,6 @@
                         <button onclick="addPortion('veggies', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
                     </div>
                 </div>
-
                 <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
                     <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🍞</span> Carbs</h2>
                     <div class="text-2xl font-bold mb-2"><span id="carbs-current">0</span> / <span id="carbs-target">8</span> Cupped Hands</div>
@@ -87,7 +71,6 @@
                         <button onclick="addPortion('carbs', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
                     </div>
                 </div>
-
                 <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
                     <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥑</span> Fat</h2>
                     <div class="text-2xl font-bold mb-2"><span id="fat-current">0</span> / <span id="fat-target">6</span> Thumbs</div>
@@ -108,19 +91,13 @@
 
             <section class="mb-8">
                 <h2 class="text-2xl font-bold text-center mb-4 text-gray-900">Quick Add Common Items</h2>
-                <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                    <button onclick="logCommonItem('breakfast')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Breakfast</button>
-                    <button onclick="logCommonItem('plenny400')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Plenny (400kcal)</button>
-                    <button onclick="logCommonItem('plenny600')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Plenny (600kcal)</button>
-                    <button onclick="logCommonItem('proteinBar')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Protein Bar</button>
-                    <button onclick="logCommonItem('croissant')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Croissant</button>
-                    <button onclick="logCommonItem('egg')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">One Egg</button>
-                    <button onclick="logCommonItem('oatMilk200')" class="btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105">Oat Milk (200ml)</button>
+                <div id="common-items-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 </div>
             </section>
 
             <section class="text-center">
-                <button id="reset-day" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-4">Reset Day</button>
+                <button id="reset-day" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Reset Day</button>
+                <button id="manage-items-btn" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Manage Items</button>
                 <button id="show-cheat-sheet" class="btn-secondary font-bold py-2 px-6 rounded-lg">View Cheat Sheet</button>
             </section>
         </main>
@@ -132,7 +109,6 @@
                 <h2 class="text-2xl font-bold">Hand-Portion System Reference</h2>
                 <button id="close-cheat-sheet" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
             </div>
-            
             <div class="space-y-6">
                 <div>
                     <h3 class="text-xl font-semibold mb-2">Daily Hand-Portion Cheat Sheet (~2200 kcal)</h3>
@@ -140,76 +116,14 @@
                         <table class="w-full text-left border-collapse">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="p-3 font-semibold">Feature / Hand Portion</th>
-                                    <th class="p-3 font-semibold">Palm</th>
-                                    <th class="p-3 font-semibold">Fist</th>
-                                    <th class="p-3 font-semibold">Cupped Hand</th>
-                                    <th class="p-3 font-semibold">Thumb (full)</th>
+                                    <th class="p-3 font-semibold">Feature / Hand Portion</th><th class="p-3 font-semibold">Palm</th><th class="p-3 font-semibold">Fist</th><th class="p-3 font-semibold">Cupped Hand</th><th class="p-3 font-semibold">Thumb (full)</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Measures Primarily...</td>
-                                    <td class="p-3">Protein-rich foods</td>
-                                    <td class="p-3">Non-starchy Vegetables</td>
-                                    <td class="p-3">Carbohydrate-rich foods</td>
-                                    <td class="p-3">Fat-rich foods</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Approx. Primary Nutrient / Portion</td>
-                                    <td class="p-3">~25g Protein</td>
-                                    <td class="p-3">~7g Carbs (mainly fiber)</td>
-                                    <td class="p-3">~25g Carbohydrates</td>
-                                    <td class="p-3">~11g Fat</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Approx. Calories / Portion</td>
-                                    <td class="p-3">~150 kcal</td>
-                                    <td class="p-3">~35 kcal</td>
-                                    <td class="p-3">~120 kcal</td>
-                                    <td class="p-3">~100 kcal</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-3 font-medium">Your Daily Target</td>
-                                    <td class="p-3 font-bold text-teal-700">4 Palms</td>
-                                    <td class="p-3 font-bold text-teal-700">5+ Fists</td>
-                                    <td class="p-3 font-bold text-teal-700">8 Cupped Hands</td>
-                                    <td class="p-3 font-bold text-teal-700">6 Thumbs</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div>
-                    <h3 class="text-xl font-semibold mb-2">Common Items – Hand Portion Estimates</h3>
-                     <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="p-3 font-semibold">Hand Portion / Item</th>
-                                    <th class="p-3 font-semibold">Your Breakfast</th>
-                                    <th class="p-3 font-semibold">Oat Milk (200ml)</th>
-                                    <th class="p-3 font-semibold">Plenny (600 kcal)</th>
-                                    <th class="p-3 font-semibold">Plenny (400 kcal)</th>
-                                    <th class="p-3 font-semibold">Protein Bar</th>
-                                    <th class="p-3 font-semibold">Croissant</th>
-                                    <th class="p-3 font-semibold">One Egg</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Protein (Palms)</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">0</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0.5</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Vegetables (Fists)</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td><td class="p-3 text-center">0</td>
-                                </tr>
-                                <tr class="border-b">
-                                    <td class="p-3 font-medium">Carbohydrates (Cupped Hands)</td><td class="p-3 text-center">2.5</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">2.5</td><td class="p-3 text-center">2</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td>
-                                </tr>
-                                <tr>
-                                    <td class="p-3 font-medium">Fat (Thumbs)</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0.5</td><td class="p-3 text-center">1.5</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">1</td><td class="p-3 text-center">0</td>
-                                </tr>
+                                <tr class="border-b"><td class="p-3 font-medium">Measures Primarily...</td><td class="p-3">Protein-rich foods</td><td class="p-3">Non-starchy Vegetables</td><td class="p-3">Carbohydrate-rich foods</td><td class="p-3">Fat-rich foods</td></tr>
+                                <tr class="border-b"><td class="p-3 font-medium">Approx. Primary Nutrient / Portion</td><td class="p-3">~25g Protein</td><td class="p-3">~7g Carbs (mainly fiber)</td><td class="p-3">~25g Carbohydrates</td><td class="p-3">~11g Fat</td></tr>
+                                <tr class="border-b"><td class="p-3 font-medium">Approx. Calories / Portion</td><td class="p-3">~150 kcal</td><td class="p-3">~35 kcal</td><td class="p-3">~120 kcal</td><td class="p-3">~100 kcal</td></tr>
+                                <tr><td class="p-3 font-medium">Your Daily Target</td><td class="p-3 font-bold text-teal-700">4 Palms</td><td class="p-3 font-bold text-teal-700">5+ Fists</td><td class="p-3 font-bold text-teal-700">8 Cupped Hands</td><td class="p-3 font-bold text-teal-700">6 Thumbs</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -218,30 +132,69 @@
         </div>
     </div>
 
-    <script>
-        const portionCalories = {
-            protein: 150, // Approx. calories per Palm
-            veggies: 35,  // Approx. calories per Fist
-            carbs: 120,   // Approx. calories per Cupped Hand
-            fat: 100      // Approx. calories per Thumb
-        };
+    <div id="manage-items-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
+        <div class="modal-content bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95 overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">Manage Common Items</h2>
+                <button id="close-manage-items" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
+            </div>
+            <form id="common-item-form" class="space-y-4 mb-6">
+                <input type="hidden" id="edit-item-name" value="">
+                <div>
+                    <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
+                    <input type="text" id="item-name" name="item-name" required class="input-field mt-1">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="item-p" class="block text-sm font-medium text-gray-700">Protein (Palms)</label>
+                        <input type="number" id="item-p" name="item-p" step="0.5" min="0" value="0" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="item-v" class="block text-sm font-medium text-gray-700">Veggies (Fists)</label>
+                        <input type="number" id="item-v" name="item-v" step="0.5" min="0" value="0" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="item-c" class="block text-sm font-medium text-gray-700">Carbs (Cupped)</label>
+                        <input type="number" id="item-c" name="item-c" step="0.5" min="0" value="0" required class="input-field mt-1">
+                    </div>
+                    <div>
+                        <label for="item-f" class="block text-sm font-medium text-gray-700">Fat (Thumbs)</label>
+                        <input type="number" id="item-f" name="item-f" step="0.5" min="0" value="0" required class="input-field mt-1">
+                    </div>
+                </div>
+                <button type="submit" id="save-item-btn" class="btn-main w-full py-2.5 rounded-lg font-semibold">Add Item</button>
+            </form>
+            <div id="current-items-list" class="space-y-2">
+            </div>
+        </div>
+    </div>
 
-        const trackerData = {
+    <script>
+        const portionCalories = { protein: 150, veggies: 35, carbs: 120, fat: 100 };
+        let trackerData = {
             protein: { current: 0, target: 4 },
             veggies: { current: 0, target: 5 },
             carbs: { current: 0, target: 8 },
             fat: { current: 0, target: 6 },
         };
-
-        const commonItems = {
-            breakfast: { p: 0.5, v: 0, c: 2.5, f: 1 },
-            oatMilk200: { p: 0, v: 0, c: 0.5, f: 0.5 },
-            plenny600: { p: 1, v: 0, c: 2.5, f: 1.5 },
-            plenny400: { p: 0.5, v: 0, c: 2, f: 1 },
-            proteinBar: { p: 1, v: 0, c: 1, f: 1 },
-            croissant: { p: 0, v: 0, c: 1, f: 1 },
-            egg: { p: 0.5, v: 0, c: 0, f: 0 },
+        let commonItems = {
+            'Breakfast': { p: 0.5, v: 0, c: 2.5, f: 1 },
+            'Oat Milk (200ml)': { p: 0, v: 0, c: 0.5, f: 0.5 },
+            'Plenny (600kcal)': { p: 1, v: 0, c: 2.5, f: 1.5 },
+            'Plenny (400kcal)': { p: 0.5, v: 0, c: 2, f: 1 },
+            'Protein Bar': { p: 1, v: 0, c: 1, f: 1 },
+            'Croissant': { p: 0, v: 0, c: 1, f: 1 },
+            'One Egg': { p: 0.5, v: 0, c: 0, f: 0 },
         };
+
+        function calculateTotalCalories() {
+            let total = 0;
+            total += trackerData.protein.current * portionCalories.protein;
+            total += trackerData.veggies.current * portionCalories.veggies;
+            total += trackerData.carbs.current * portionCalories.carbs;
+            total += trackerData.fat.current * portionCalories.fat;
+            return total;
+        }
 
         function updateDisplay() {
             for (const key in trackerData) {
@@ -249,9 +202,9 @@
                 document.getElementById(`${key}-current`).textContent = current;
                 const progressElement = document.getElementById(`${key}-progress`);
                 progressElement.value = current;
-                
                 const currentElement = document.getElementById(`${key}-current`);
-                if (current > target) {
+                const actualTarget = (key === 'veggies' && target === 5) ? Infinity : target;
+                if (current > actualTarget && key !== 'veggies') {
                     currentElement.parentElement.classList.add('text-red-600');
                     currentElement.parentElement.classList.remove('text-gray-800');
                 } else {
@@ -259,34 +212,21 @@
                     currentElement.parentElement.classList.add('text-gray-800');
                 }
             }
-            
-            const totalCalories = calculateTotalCalories();
-            document.getElementById('total-calories').textContent = totalCalories;
-
+            document.getElementById('total-calories').textContent = calculateTotalCalories();
+            renderCommonItemButtons();
+            renderManageItemsList();
             saveState();
         }
 
-        function calculateTotalCalories() {
-            let totalCalories = 0;
-            totalCalories += trackerData.protein.current * portionCalories.protein;
-            totalCalories += trackerData.veggies.current * portionCalories.veggies;
-            totalCalories += trackerData.carbs.current * portionCalories.carbs;
-            totalCalories += trackerData.fat.current * portionCalories.fat;
-            return totalCalories;
-        }
-
         function addPortion(type, amount) {
-            trackerData[type].current += amount;
-            if (trackerData[type].current < 0) {
-                trackerData[type].current = 0;
-            }
+            trackerData[type].current = parseFloat((trackerData[type].current + amount).toFixed(1));
+            if (trackerData[type].current < 0) trackerData[type].current = 0;
             updateDisplay();
         }
 
         function logCommonItem(itemName) {
             const item = commonItems[itemName];
             if (!item) return;
-
             addPortion('protein', item.p);
             addPortion('veggies', item.v);
             addPortion('carbs', item.c);
@@ -294,7 +234,7 @@
         }
 
         function resetDay() {
-            if (confirm("Are you sure you want to reset all counts for the day?")) {
+            if (window.confirm("Are you sure you want to reset all counts for the day?")) {
                 for (const key in trackerData) {
                     trackerData[key].current = 0;
                 }
@@ -302,41 +242,141 @@
             }
         }
 
+        function renderCommonItemButtons() {
+            const container = document.getElementById('common-items-container');
+            container.innerHTML = '';
+            Object.keys(commonItems).forEach(name => {
+                const button = document.createElement('button');
+                button.textContent = name;
+                button.className = 'btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105';
+                button.onclick = () => logCommonItem(name);
+                container.appendChild(button);
+            });
+        }
+
+        function renderManageItemsList() {
+            const listContainer = document.getElementById('current-items-list');
+            listContainer.innerHTML = '';
+            Object.entries(commonItems).forEach(([name, portions]) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center p-2 border-b border-gray-200';
+                itemDiv.innerHTML = `
+                    <span class="text-sm">${name} (P:${portions.p} V:${portions.v} C:${portions.c} F:${portions.f})</span>
+                    <div>
+                        <button onclick="populateEditForm('${name}')" class="text-xs btn-secondary px-2 py-1 rounded-md mr-1">Edit</button>
+                        <button onclick="deleteCommonItem('${name}')" class="text-xs btn-danger px-2 py-1 rounded-md">Del</button>
+                    </div>
+                `;
+                listContainer.appendChild(itemDiv);
+            });
+        }
+
+        document.getElementById('common-item-form').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('item-name').value.trim();
+            const p = parseFloat(document.getElementById('item-p').value) || 0;
+            const v = parseFloat(document.getElementById('item-v').value) || 0;
+            const c = parseFloat(document.getElementById('item-c').value) || 0;
+            const f = parseFloat(document.getElementById('item-f').value) || 0;
+            const editItemName = document.getElementById('edit-item-name').value;
+
+            if (!name) {
+                alert("Item name cannot be empty.");
+                return;
+            }
+
+            if (editItemName && editItemName !== name && commonItems[name]) {
+                alert("An item with this new name already exists. Please choose a different name.");
+                return;
+            }
+            
+            if (editItemName && editItemName !== name) {
+                delete commonItems[editItemName]; 
+            }
+            
+            commonItems[name] = { p, v, c, f };
+            
+            this.reset();
+            document.getElementById('edit-item-name').value = '';
+            document.getElementById('save-item-btn').textContent = 'Add Item';
+            updateDisplay();
+            closeModal('manage-items-modal');
+        });
+
+        function populateEditForm(name) {
+            const item = commonItems[name];
+            if (!item) return;
+            document.getElementById('edit-item-name').value = name;
+            document.getElementById('item-name').value = name;
+            document.getElementById('item-p').value = item.p;
+            document.getElementById('item-v').value = item.v;
+            document.getElementById('item-c').value = item.c;
+            document.getElementById('item-f').value = item.f;
+            document.getElementById('save-item-btn').textContent = 'Update Item';
+            openModal('manage-items-modal');
+        }
+
+        function deleteCommonItem(name) {
+            if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
+                delete commonItems[name];
+                updateDisplay();
+            }
+        }
+
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const modalContent = modal.querySelector('.modal-content');
+            modal.classList.remove('invisible', 'opacity-0');
+            modalContent.classList.remove('scale-95');
+            modalContent.scrollTop = 0;
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            const modalContent = modal.querySelector('.modal-content');
+            modalContent.classList.add('scale-95');
+            modal.classList.add('opacity-0');
+            setTimeout(() => modal.classList.add('invisible'), 300);
+        }
+        
         function saveState() {
             localStorage.setItem('handPortionTrackerState', JSON.stringify(trackerData));
+            localStorage.setItem('handPortionCommonItems', JSON.stringify(commonItems));
         }
 
         function loadState() {
-            const savedState = localStorage.getItem('handPortionTrackerState');
-            if (savedState) {
-                const loadedData = JSON.parse(savedState);
-                Object.assign(trackerData, loadedData);
+            const savedTrackerData = localStorage.getItem('handPortionTrackerState');
+            if (savedTrackerData) {
+                const loadedData = JSON.parse(savedTrackerData);
+                for (const key in trackerData) {
+                    if (loadedData.hasOwnProperty(key) && loadedData[key].hasOwnProperty('current')) {
+                        trackerData[key].current = loadedData[key].current;
+                    }
+                }
+            }
+            const savedCommonItems = localStorage.getItem('handPortionCommonItems');
+            if (savedCommonItems) {
+                commonItems = JSON.parse(savedCommonItems);
             }
             updateDisplay();
         }
 
         document.getElementById('reset-day').addEventListener('click', resetDay);
-        
-        const modal = document.getElementById('cheat-sheet-modal');
-        const modalContent = modal.querySelector('.modal-content');
-        document.getElementById('show-cheat-sheet').addEventListener('click', () => {
-            modal.classList.remove('invisible', 'opacity-0');
-            modalContent.classList.remove('scale-95');
+        document.getElementById('show-cheat-sheet').addEventListener('click', () => openModal('cheat-sheet-modal'));
+        document.getElementById('close-cheat-sheet').addEventListener('click', () => closeModal('cheat-sheet-modal'));
+        document.getElementById('cheat-sheet-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('cheat-sheet-modal')) closeModal('cheat-sheet-modal');
         });
 
-        const closeModal = () => {
-            modalContent.classList.add('scale-95');
-            modal.classList.add('opacity-0');
-            setTimeout(() => {
-                modal.classList.add('invisible');
-            }, 300);
-        };
-
-        document.getElementById('close-cheat-sheet').addEventListener('click', closeModal);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeModal();
-            }
+        document.getElementById('manage-items-btn').addEventListener('click', () => {
+            document.getElementById('common-item-form').reset();
+            document.getElementById('edit-item-name').value = '';
+            document.getElementById('save-item-btn').textContent = 'Add Item';
+            openModal('manage-items-modal');
+        });
+        document.getElementById('close-manage-items').addEventListener('click', () => closeModal('manage-items-modal'));
+        document.getElementById('manage-items-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('manage-items-modal')) closeModal('manage-items-modal');
         });
         
         document.addEventListener('DOMContentLoaded', loadState);
