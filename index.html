@@ -156,7 +156,7 @@
                 </div>
                 <div>
                     <label for="hand-size" class="block text-sm font-medium text-gray-700">Hand Size (for rough calorie estimate)</label>
-                    <select id="hand-size" class="input-field mt-1" onchange="updateHandSize(this.value)">
+                    <select id="form-hand-size" class="input-field mt-1" onchange="updateHandSize(this.value)">
                         <option value="small">Small</option>
                         <option value="medium" selected>Medium</option>
                         <option value="large">Large</option>
@@ -441,6 +441,10 @@
                 const handSize = loadedData.handSize || 'medium';
                 trackerData.handSize = handSize;
                 selectedHandSize = handSize;
+                const formElement = document.getElementById('form-hand-size');
+                if (formElement) {
+                    formElement.value = handSize;
+                }
             }
             const savedCommonItems = localStorage.getItem('handPortionCommonItems');
             if (savedCommonItems) {
