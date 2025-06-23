@@ -49,8 +49,6 @@
         <progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="5"></progress>
         <div class="grid grid-cols-4 gap-2 mt-auto">
           <button onclick="addPortion('veggies',1)" class="btn-control">+1</button>
-          <button onclick="addPortion('veggies',0.5)" class="btn-control">+0.5</button>
-          <button onclick="addPortion('veggies',-0.5)" class="btn-control">-0.5</button>
           <button onclick="addPortion('veggies',-1)" class="btn-control">-1</button>
         </div>
       </div>
@@ -143,6 +141,8 @@
     const FOOD_KEY = 'food_current';
     const MED_KEY = 'med_habits';
     const EX_KEY = 'exercise_logs';
+    const caloriesPerPortion = { protein:145, veggies:25, carbs:120, fat:100 };
+    const targets = { protein:4, veggies:5, carbs:8, fat:6 };
     let current = { protein:0, veggies:0, carbs:0, fat:0 };
 
     function loadCurrent() {
@@ -167,8 +167,21 @@
       document.getElementById('cal-target').textContent = Math.round(calTar);
     }
     function addPortion(type, amt) {
+      console.log(`Adding ${amt} to ${type}`);
       current[type] = Math.max(0, +((current[type]||0)+amt).toFixed(1));
       saveCurrent(); updateUI(); updateCalories();
+    }
+    function logItem(name) {
+      const map = {
+        'Breakfast': { protein:0.5, veggies:0, carbs:2.5, fat:1 },
+        '2dl Oat Milk': { protein:0, veggies:0, carbs:0.5, fat:0.5 },
+        'Plenny 600': { protein:1, veggies:0, carbs:2.5, fat:1.5 },
+        'Plenny 400': { protein:0.5, veggies:0, carbs:2, fat:1 },
+        'Protein Bar': { protein:1, veggies:0, carbs:1, fat:1 },
+        'Croissant': { protein:0, veggies:0, carbs:1, fat:1 }
+      };
+      const item = map[name]; if (!item) return;
+      Object.entries(item).forEach(([k,v])=>addPortion(k,v));
     }
 
     // Save Day replaces local logging with Google Sheets append
