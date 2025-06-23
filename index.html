@@ -164,10 +164,13 @@
       ['cardio','pushups','rows','squats','bridges','physio'].forEach(k => rows.push([date, k, ex[k]||0]));
       // Build CSV
       const header = ['date','measurement','value'];
-      const csv = [header.join(', '), ...rows.map(r => r.join(', '))].join('\n');
+      const csv = rows.map(r => r.join(', ')).join('\n');
       // Copy
       if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(csv).then(() => alert('CSV copied! Paste into your sheet.'), () => prompt('Copy CSV', csv));
+        navigator.clipboard.writeText(csv).then(
+          () => alert('CSV copied! Paste into your sheet.'),
+          () => prompt('Copy CSV', csv)
+        );
       } else {
         prompt('Copy CSV', csv);
       }
