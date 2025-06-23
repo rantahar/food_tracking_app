@@ -23,6 +23,7 @@
     .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
     .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .hidden { display: none; }
+    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; outline: none; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
     input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
     input[type=number]::-webkit-inner-spin-button, 
@@ -91,20 +92,20 @@
         <h2 class="text-3xl font-bold text-center mb-8">Session Review</h2>
         <div class="space-y-6">
             <div>
-                <label for="concentration-slider" class="block text-lg font-medium mb-2">Concentration: <span id="concentration-value">3</span></label>
-                <input id="concentration-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <label for="concentration-slider" class="block text-lg font-medium mb-2">Concentration: <span id="concentration-value">-</span></label>
+                <input id="concentration-slider" type="range" min="1" max="5">
             </div>
             <div>
-                <label for="clarity-slider" class="block text-lg font-medium mb-2">Clarity: <span id="clarity-value">3</span></label>
-                <input id="clarity-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <label for="clarity-slider" class="block text-lg font-medium mb-2">Clarity: <span id="clarity-value">-</span></label>
+                <input id="clarity-slider" type="range" min="1" max="5">
             </div>
             <div>
-                <label for="equanimity-slider" class="block text-lg font-medium mb-2">Equanimity: <span id="equanimity-value">3</span></label>
-                <input id="equanimity-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                <label for="equanimity-slider" class="block text-lg font-medium mb-2">Equanimity: <span id="equanimity-value">-</span></label>
+                <input id="equanimity-slider" type="range" min="1" max="5">
             </div>
             <div>
                 <label for="midl-marker-input" class="block text-lg font-medium mb-2 text-center">MIDL Marker</label>
-                <input id="midl-marker-input" type="number" min="0" max="12" value="0" class="w-full text-center text-2xl font-bold bg-transparent border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-600">
+                <input id="midl-marker-input" type="number" min="0" max="12" placeholder="-" class="w-full text-center text-2xl font-bold bg-transparent border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-600">
             </div>
         </div>
         <div class="text-center mt-10">
@@ -135,7 +136,8 @@
     // --- Application State and Constants ---
     let db, auth, userId = null;
     let timerIntervalId = null;
-    let bellSynth; // Updated synthesizer variable
+    let bellSynth; 
+    let sliderInteracted = { concentration: false, clarity: false, equanimity: false };
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -176,7 +178,7 @@
         return `${mins}:${secs}`;
     };
 
-    // --- Sound Synthesis (Improved) ---
+    // --- Sound Synthesis ---
     const setupAudio = () => {
         if (!bellSynth) {
             bellSynth = new Tone.FMSynth({
@@ -198,11 +200,17 @@
     };
 
     const playBell = (note, duration) => {
-        if (Tone.context.state !== 'running') {
-            Tone.start();
-        }
+        if (Tone.context.state !== 'running') { Tone.start(); }
         if (!bellSynth) setupAudio();
-        bellSynth.triggerAttackRelease(note, duration);
+        bellSynth.triggerAttackRelease(note, duration, Tone.now(), 0.8);
+    };
+
+    const resetEvaluationForm = () => {
+        sliderInteracted = { concentration: false, clarity: false, equanimity: false };
+        document.querySelectorAll('#evaluation-view input[type="range"]').forEach(slider => {
+            document.getElementById(`${slider.id.split('-')[0]}-value`).textContent = '-';
+        });
+        document.getElementById('midl-marker-input').value = '';
     };
 
     // --- Timer Logic ---
@@ -225,9 +233,8 @@
             totalSeconds--;
             timerDisplay.textContent = formatTime(totalSeconds);
 
-            // Interval bell logic
             if (!intervalPlayed && intervalMinutes > 0 && totalMinutes > intervalMinutes && totalSeconds === (totalMinutes - intervalMinutes) * 60) {
-                playBell('G5', '1n'); // Different note for interval
+                playBell('G4', '1n');
                 intervalMessage.style.opacity = 1;
                 setTimeout(() => intervalMessage.style.opacity = 0, 3000);
                 intervalPlayed = true;
@@ -235,7 +242,8 @@
 
             if (totalSeconds <= 0) {
                 clearInterval(timerIntervalId);
-                playBell('C5', '2n'); // End bell
+                playBell('C4', '2n');
+                resetEvaluationForm();
                 switchView(evaluationView);
             }
         }, 1000);
@@ -247,19 +255,25 @@
             showFeedback("You must be logged in to save.", true);
             return;
         }
+
+        const concentrationSlider = document.getElementById('concentration-slider');
+        const claritySlider = document.getElementById('clarity-slider');
+        const equanimitySlider = document.getElementById('equanimity-slider');
+        const midlMarkerInput = document.getElementById('midl-marker-input');
+        
         const sessionData = {
             userId: userId,
             timestamp: new Date(),
             durationMinutes: parseInt(timeInput.value, 10),
             intervalMinutes: parseInt(intervalInput.value, 10),
-            concentration: parseInt(document.getElementById('concentration-slider').value),
-            clarity: parseInt(document.getElementById('clarity-slider').value),
-            equanimity: parseInt(document.getElementById('equanimity-slider').value),
-            midlMarker: parseInt(document.getElementById('midl-marker-input').value, 10)
+            concentration: sliderInteracted.concentration ? parseInt(concentrationSlider.value) : null,
+            clarity: sliderInteracted.clarity ? parseInt(claritySlider.value) : null,
+            equanimity: sliderInteracted.equanimity ? parseInt(equanimitySlider.value) : null,
+            midlMarker: midlMarkerInput.value === '' ? null : parseInt(midlMarkerInput.value, 10)
         };
 
         try {
-            await addDoc(collection(db, "meditation_sessions"), sessionData);
+            await addDoc(collection(db, "users", userId, "meditation_sessions"), sessionData);
             showFeedback("Session saved successfully!");
             switchView(setupView);
         } catch (error) {
@@ -298,14 +312,17 @@
             // App buttons
             startBtn.addEventListener('click', startTimer);
             document.getElementById('save-session-btn').addEventListener('click', saveSession);
-            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C5', '2n'));
-            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G5', '2n'));
+            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '2n'));
+            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '1n'));
 
-            // Slider value displays
+            // Slider value displays and interaction tracking
             ['concentration', 'clarity', 'equanimity'].forEach(id => {
                 const slider = document.getElementById(`${id}-slider`);
                 const valueSpan = document.getElementById(`${id}-value`);
-                slider.addEventListener('input', () => valueSpan.textContent = slider.value);
+                slider.addEventListener('input', () => {
+                    sliderInteracted[id] = true;
+                    valueSpan.textContent = slider.value;
+                });
             });
 
         } catch (error) {
