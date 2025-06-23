@@ -1,477 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hand-Portion Daily Tracker</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="apple-touch-icon" sizes="180x180" href="icon_180.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="icon_192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icon_32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="icon_16.png">
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
-        .progress-bar { appearance: none; -webkit-appearance: none; }
-        .progress-bar::-webkit-progress-bar { background-color: #e5e7eb; border-radius: 0.5rem; }
-        .progress-bar::-webkit-progress-value { background-color: #348a7b; border-radius: 0.5rem; transition: width 0.3s ease-in-out; }
-        .modal { transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out; }
-        .modal-content { transition: transform 0.3s ease-in-out; }
-        .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; }
-        .btn-control:hover { background-color: #e5e7eb; }
-        .btn-main { background-color: #348a7b; color: white; }
-        .btn-main:hover { background-color: #2a7062; }
-        .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
-        .btn-secondary:hover { background-color: #e9e9d9; }
-        .btn-danger { background-color: #ef4444; color: white; }
-        .btn-danger:hover { background-color: #dc2626; }
-        .input-field { border: 1px solid #d1d5db; padding: 0.5rem; border-radius: 0.5rem; width: 100%; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .progress-bar::-webkit-progress-bar { background-color: #e5e7eb; border-radius: .5rem; }
+    .progress-bar::-webkit-progress-value { background-color: #348a7b; border-radius: .5rem; transition: width .3s ease; }
+    .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; }
+    .btn-control:hover { background-color: #e5e7eb; }
+    .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+    .btn-secondary:hover { background-color: #e9e9d9; }
+    #calorie-display { text-align: center; margin: 1.5rem 0; }
+    #calorie-display .cal-text { font-size: 1.5rem; font-weight: bold; }
+  </style>
 </head>
 <body class="text-gray-800">
-    <div class="container mx-auto max-w-4xl p-4 sm:p-6 md:p-8">
-        
-        <header class="text-center mb-8">
-            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Hand-Portion Daily Tracker</h1>
-        </header>
-
-        <main>
-            <section id="trackers" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
-                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🍗</span> Protein</h2>
-                    <div class="text-2xl font-bold mb-2"><span id="protein-current">0</span> / <span id="protein-target">4</span> Palms</div>
-                    <progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="4"></progress>
-                    <div class="grid grid-cols-4 gap-2 mt-auto">
-                        <button onclick="addPortion('protein', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
-                        <button onclick="addPortion('protein', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
-                        <button onclick="addPortion('protein', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
-                        <button onclick="addPortion('protein', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
-                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥗</span> Veggies</h2>
-                    <div class="text-2xl font-bold mb-2"><span id="veggies-current">0</span> / <span id="veggies-target">5</span>+ Fists</div>
-                    <progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="5"></progress>
-                    <div class="grid grid-cols-2 gap-2 mt-auto">
-                        <button onclick="addPortion('veggies', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
-                        <button onclick="addPortion('veggies', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
-                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🍞</span> Carbs</h2>
-                    <div class="text-2xl font-bold mb-2"><span id="carbs-current">0</span> / <span id="carbs-target">8</span> Cupped Hands</div>
-                    <progress id="carbs-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="8"></progress>
-                    <div class="grid grid-cols-4 gap-2 mt-auto">
-                        <button onclick="addPortion('carbs', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
-                        <button onclick="addPortion('carbs', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
-                        <button onclick="addPortion('carbs', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
-                        <button onclick="addPortion('carbs', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
-                    </div>
-                </div>
-                <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
-                    <h2 class="text-xl font-semibold mb-2 flex items-center"><span class="mr-2 text-2xl">🥑</span> Fat</h2>
-                    <div class="text-2xl font-bold mb-2"><span id="fat-current">0</span> / <span id="fat-target">6</span> Thumbs</div>
-                    <progress id="fat-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="6"></progress>
-                    <div class="grid grid-cols-4 gap-2 mt-auto">
-                        <button onclick="addPortion('fat', 1)" class="btn-control font-bold rounded-lg py-2">+1</button>
-                        <button onclick="addPortion('fat', 0.5)" class="btn-control font-bold rounded-lg py-2">+0.5</button>
-                        <button onclick="addPortion('fat', -0.5)" class="btn-control font-bold rounded-lg py-2">-0.5</button>
-                        <button onclick="addPortion('fat', -1)" class="btn-control font-bold rounded-lg py-2">-1</button>
-                    </div>
-                </div>
-            </section>
-
-            <section class="text-center my-8">
-                <h2 class="text-2xl font-bold text-gray-900">Estimated Daily Calories</h2>
-                <p class="text-4xl font-bold text-teal-700 mt-2" id="total-calories-text"><span id="total-calories-current">0</span> / <span id="total-calories-target">0</span> kcal</p>
-            </section>
-
-            <section class="mb-8">
-                <h2 class="text-2xl font-bold text-center mb-4 text-gray-900">Quick Add Common Items</h2>
-                <div id="common-items-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
-                </div>
-            </section>
-
-            <section class="text-center">
-                <button id="reset-day" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Reset Day</button>
-                <button id="manage-btn" class="btn-secondary font-bold py-2 px-6 rounded-lg mr-2">Manage</button>
-                <button id="show-cheat-sheet" class="btn-secondary font-bold py-2 px-6 rounded-lg">View Cheat Sheet</button>
-            </section>
-        </main>
+  <div class="container mx-auto max-w-4xl p-6">
+    <header class="text-center mb-6">
+      <h1 class="text-3xl font-bold">Food Tracker</h1>
+    </header>
+    <!-- Calorie Display -->
+    <div id="calorie-display">
+      <div>Estimated Calories</div>
+      <div class="cal-text"><span id="cal-current">0</span> / <span id="cal-target">0</span> kcal</div>
     </div>
-
-    <div id="cheat-sheet-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
-        <div class="modal-content bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95 overflow-y-auto">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-2xl font-bold">Hand-Portion System Reference</h2>
-                <button id="close-cheat-sheet" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
-            </div>
-            <div class="space-y-6">
-                <div>
-                    <h3 class="text-xl font-semibold mb-2">Daily Hand-Portion Cheat Sheet</h3>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th class="p-3 font-semibold">Feature / Hand Portion</th><th class="p-3 font-semibold">Palm</th><th class="p-3 font-semibold">Fist</th><th class="p-3 font-semibold">Cupped Hand</th><th class="p-3 font-semibold">Thumb (full)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr class="border-b"><td class="p-3 font-medium">Measures Primarily...</td><td class="p-3">Protein-rich foods</td><td class="p-3">Non-starchy Vegetables</td><td class="p-3">Carbohydrate-rich foods</td><td class="p-3">Fat-rich foods</td></tr>
-                                <tr class="border-b"><td class="p-3 font-medium">Approx. Primary Nutrient / Portion</td><td class="p-3">~25g Protein</td><td class="p-3">~7g Carbs (mainly fiber)</td><td class="p-3">~25g Carbohydrates</td><td class="p-3">~11g Fat</td></tr>
-                                <tr class="border-b"><td class="p-3 font-medium">Approx. Calories / Portion</td><td class="p-3">~150 kcal</td><td class="p-3">~35 kcal</td><td class="p-3">~120 kcal</td><td class="p-3">~100 kcal</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <!-- Protein -->
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+        <h2 class="text-xl font-semibold mb-2">🍗 Protein</h2>
+        <div class="text-2xl font-bold mb-2"><span id="protein-current">0</span> / 4 Palms</div>
+        <progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="4"></progress>
+        <div class="grid grid-cols-4 gap-2 mt-auto">
+          <button onclick="addPortion('protein',1)" class="btn-control">+1</button>
+          <button onclick="addPortion('protein',0.5)" class="btn-control">+0.5</button>
+          <button onclick="addPortion('protein',-0.5)" class="btn-control">-0.5</button>
+          <button onclick="addPortion('protein',-1)" class="btn-control">-1</button>
         </div>
-    </div>
-
-    <div id="manage-modal" class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 invisible opacity-0">
-        <div class="modal-content bg-white w-full max-w-lg max-h-[90vh] rounded-2xl shadow-2xl p-6 sm:p-8 transform scale-95 overflow-y-auto">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-2xl font-bold">Manage</h2>
-                <button id="close-manage" class="text-3xl font-light leading-none text-gray-500 hover:text-gray-800">&times;</button>
-            </div>
-            <h3 class="text-lg font-semibold text-gray-800">Daily Targets</h3>
-            <div class="grid grid-cols-2 gap-4">
-                <div>
-                    <label for="protein-target" class="block text-sm font-medium text-gray-700">Protein Target (Palms)</label>
-                    <input type="number" id="form-protein-target" name="protein-target" step="0.5" min="0" value="4" required class="input-field mt-1" oninput="updateProteinTarget(this.value)">
-                </div>
-                <div>
-                    <label for="veggies-target" class="block text-sm font-medium text-gray-700">Veggies Target (Fists)</label>
-                    <input type="number" id="form-veggies-target" name="veggies-target" step="0.5" min="0" value="5" required class="input-field mt-1" oninput="updateVeggiesTarget(this.value)">
-                </div>
-                <div>
-                    <label for="carbs-target" class="block text-sm font-medium text-gray-700">Carbs Target (Cupped)</label>
-                    <input type="number" id="form-carbs-target" name="carbs-target" step="0.5" min="0" value="8" required class="input-field mt-1" oninput="updateCarbsTarget(this.value)">
-                </div>
-                <div>
-                    <label for="fat-target" class="block text-sm font-medium text-gray-700">Fat Target (Thumbs)</label>
-                    <input type="number" id="form-fat-target" name="fat-target" step="0.5" min="0" value="6" required class="input-field mt-1" oninput="updateFatTarget(this.value)">
-                </div>
-                <div>
-                    <label for="hand-size" class="block text-sm font-medium text-gray-700">Hand Size (for rough calorie estimate)</label>
-                    <select id="form-hand-size" class="input-field mt-1" onchange="updateHandSize(this.value)">
-                        <option value="small">Small</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="large">Large</option>
-                    </select>
-                </div>
-            </div>
-
-            <form id="manage-form" class="space-y-4 mb-6">
-                <input type="hidden" id="edit-item-name" value="">
-                <h3 class="text-lg font-semibold text-gray-800">Common Items</h3>
-                <div>
-                    <label for="item-name" class="block text-sm font-medium text-gray-700">Item Name</label>
-                    <input type="text" id="item-name" name="item-name" required class="input-field mt-1">
-                </div>
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label for="item-p" class="block text-sm font-medium text-gray-700">Protein (Palms)</label>
-                        <input type="number" id="item-p" name="item-p" step="0.5" min="0" value="0" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="item-v" class="block text-sm font-medium text-gray-700">Veggies (Fists)</label>
-                        <input type="number" id="item-v" name="item-v" step="0.5" min="0" value="0" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="item-c" class="block text-sm font-medium text-gray-700">Carbs (Cupped)</label>
-                        <input type="number" id="item-c" name="item-c" step="0.5" min="0" value="0" required class="input-field mt-1">
-                    </div>
-                    <div>
-                        <label for="item-f" class="block text-sm font-medium text-gray-700">Fat (Thumbs)</label>
-                        <input type="number" id="item-f" name="item-f" step="0.5" min="0" value="0" required class="input-field mt-1">
-                    </div>
-                </div>
-                <button type="submit" id="save-item-btn" class="btn-main w-full py-2.5 rounded-lg font-semibold">Add Item</button>
-            </form>
-            <div id="current-items-list" class="space-y-2">
-            </div>
+      </div>
+      <!-- Veggies -->
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+        <h2 class="text-xl font-semibold mb-2">🥗 Veggies</h2>
+        <div class="text-2xl font-bold mb-2"><span id="veggies-current">0</span> / 5 Fists</div>
+        <progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="5"></progress>
+        <div class="grid grid-cols-4 gap-2 mt-auto">
+          <button onclick="addPortion('veggies',1)" class="btn-control">+1</button>
+          <button onclick="addPortion('veggies',0.5)" class="btn-control">+0.5</button>
+          <button onclick="addPortion('veggies',-0.5)" class="btn-control">-0.5</button>
+          <button onclick="addPortion('veggies',-1)" class="btn-control">-1</button>
         </div>
+      </div>
+      <!-- Carbs -->
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+        <h2 class="text-xl font-semibold mb-2">🍞 Carbs</h2>
+        <div class="text-2xl font-bold mb-2"><span id="carbs-current">0</span> / 8 Cupped</div>
+        <progress id="carbs-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="8"></progress>
+        <div class="grid grid-cols-4 gap-2 mt-auto">
+          <button onclick="addPortion('carbs',1)" class="btn-control">+1</button>
+          <button onclick="addPortion('carbs',0.5)" class="btn-control">+0.5</button>
+          <button onclick="addPortion('carbs',-0.5)" class="btn-control">-0.5</button>
+          <button onclick="addPortion('carbs',-1)" class="btn-control">-1</button>
+        </div>
+      </div>
+      <!-- Fat -->
+      <div class="bg-white p-4 rounded-xl shadow-md flex flex-col">
+        <h2 class="text-xl font-semibold mb-2">🥑 Fat</h2>
+        <div class="text-2xl font-bold mb-2"><span id="fat-current">0</span> / 6 Thumbs</div>
+        <progress id="fat-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="6"></progress>
+        <div class="grid grid-cols-4 gap-2 mt-auto">
+          <button onclick="addPortion('fat',1)" class="btn-control">+1</button>
+          <button onclick="addPortion('fat',0.5)" class="btn-control">+0.5</button>
+          <button onclick="addPortion('fat',-0.5)" class="btn-control">-0.5</button>
+          <button onclick="addPortion('fat',-1)" class="btn-control">-1</button>
+        </div>
+      </div>
+    </section>
+    <section class="mb-6">
+      <h2 class="text-xl font-semibold mb-2">Quick Add</h2>
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+        <button onclick="logItem('Breakfast')" class="btn-main">Breakfast</button>
+        <button onclick="logItem('2dl Oat Milk')" class="btn-main">2dl Oat Milk</button>
+        <button onclick="logItem('Plenny 600')" class="btn-main">Plenny 600</button>
+        <button onclick="logItem('Plenny 400')" class="btn-main">Plenny 400</button>
+        <button onclick="logItem('Protein Bar')" class="btn-main">Protein Bar</button>
+        <button onclick="logItem('Croissant')" class="btn-main">Croissant</button>
+      </div>
+    </section>
+    <div class="text-center space-x-4 mb-4">
+      <button id="save-day" class="btn-secondary">Save Day</button>
     </div>
+  </div>
+  <script>
+    // Keys
+    const FOOD_KEY = 'food_current';
+    const MED_KEY = 'med_habits';
+    const EX_KEY = 'exercise_logs';
+    const LOG_KEY = 'daily_log';
+    // calorie data large hand
+    const caloriesPerPortion = { protein:145, veggies:25, carbs:120, fat:100 };
+    const targets = { protein:4, veggies:5, carbs:8, fat:6 };
+    let current = { protein:0, veggies:0, carbs:0, fat:0 };
 
-    <script>
-        const portionCaloriesByHand = {
-            small: { protein: 130, veggies: 25, carbs: 110, fat: 90 },
-            medium: { protein: 138, veggies: 25, carbs: 115, fat: 95 },
-            large: { protein: 145, veggies: 25, carbs: 120, fat: 100 },
-        };
-        let selectedHandSize = 'medium';
+    function loadCurrent() {
+      const stored = localStorage.getItem(FOOD_KEY);
+      if (stored) current = JSON.parse(stored);
+      updateUI(); updateCalories();
+    }
+    function saveCurrent() {
+      localStorage.setItem(FOOD_KEY, JSON.stringify(current));
+    }
+    function updateUI() {
+      ['protein','veggies','carbs','fat'].forEach(k => {
+        const val = +current[k].toFixed(1);
+        document.getElementById(`${k}-current`).textContent = val;
+        document.getElementById(`${k}-progress`).value = val;
+      });
+    }
+    function updateCalories() {
+      const calCur = Object.entries(current).reduce((sum,[k,v]) => sum + v*caloriesPerPortion[k],0);
+      const calTar = Object.entries(targets).reduce((sum,[k,v]) => sum + v*caloriesPerPortion[k],0);
+      document.getElementById('cal-current').textContent = Math.round(calCur);
+      document.getElementById('cal-target').textContent = Math.round(calTar);
+    }
+    function addPortion(type, amt) {
+      current[type] = Math.max(0, +((current[type]||0)+amt).toFixed(1));
+      saveCurrent(); updateUI(); updateCalories();
+    }
+    function logItem(name) { /* quick-add mapping omitted */ }
 
-        let trackerData = {
-            protein: { current: 0, target: 5 },
-            veggies: { current: 0, target: 7 },
-            carbs: { current: 0, target: 9 },
-            fat: { current: 0, target: 6 },
-        };
-        let commonItems = {
-            'Breakfast': { p: 0.5, v: 0, c: 2.5, f: 1 },
-            'Croissant': { p: 0, v: 0, c: 1, f: 1 },
-            'One Egg': { p: 0.5, v: 0, c: 0, f: 0 },
-        };
-
-        function calculateTotalCalories() {
-            let total = 0;
-            let portionCalories = portionCaloriesByHand[selectedHandSize];
-            total += trackerData.protein.current * portionCalories.protein;
-            total += trackerData.veggies.current * portionCalories.veggies;
-            total += trackerData.carbs.current * portionCalories.carbs;
-            total += trackerData.fat.current * portionCalories.fat;
-            return total;
-        }
-
-        function calculateTotalTargetCalories() {
-            let total = 0;
-            let portionCalories = portionCaloriesByHand[selectedHandSize];
-            total += trackerData.protein.target * portionCalories.protein;
-            total += trackerData.veggies.target * portionCalories.veggies;
-            total += trackerData.carbs.target * portionCalories.carbs;
-            total += trackerData.fat.target * portionCalories.fat;
-            return total;
-        }
-
-        function updateDisplay() {
-            for (const key of ['protein', 'veggies', 'carbs', 'fat']) {
-                const { current, target } = trackerData[key];
-                document.getElementById(`${key}-current`).textContent = current;
-                const progressElement = document.getElementById(`${key}-progress`);
-                progressElement.value = current;
-                const currentElement = document.getElementById(`${key}-current`);
-                const targetElement = document.getElementById(`${key}-target`);
-                targetElement.textContent = target;
-                const actualTarget = (key === 'veggies') ? Infinity : target;
-                if (current > actualTarget && key !== 'veggies') {
-                    currentElement.parentElement.classList.add('text-red-600');
-                    currentElement.parentElement.classList.remove('text-gray-800');
-                } else {
-                    currentElement.parentElement.classList.remove('text-red-600');
-                    currentElement.parentElement.classList.add('text-gray-800');
-                }
-            }
-
-            const totalCalories = calculateTotalCalories();
-            const targetCalories = calculateTotalTargetCalories(); 
-            document.getElementById('total-calories-current').textContent = totalCalories;
-            document.getElementById('total-calories-target').textContent = targetCalories;
-            if (totalCalories > targetCalories) {
-                document.getElementById('total-calories-text').classList.add('text-gray-600');
-                document.getElementById('total-calories-text').classList.remove('text-teal-700');
-            } else {
-                document.getElementById('total-calories-text').classList.remove('text-gray-600');
-                document.getElementById('total-calories-text').classList.add('text-teal-700');
-            }
-
-            renderCommonItemButtons();
-            renderManageItemsList();
-            saveState();
-        }
-
-        function addPortion(type, amount) {
-            trackerData[type].current = parseFloat((trackerData[type].current + amount).toFixed(1));
-            if (trackerData[type].current < 0) trackerData[type].current = 0;
-            updateDisplay();
-        }
-
-        function logCommonItem(itemName) {
-            const item = commonItems[itemName];
-            if (!item) return;
-            addPortion('protein', item.p);
-            addPortion('veggies', item.v);
-            addPortion('carbs', item.c);
-            addPortion('fat', item.f);
-        }
-
-        function resetDay() {
-            if (window.confirm("Are you sure you want to reset all counts for the day?")) {
-                for (const key in trackerData) {
-                    trackerData[key].current = 0;
-                }
-                updateDisplay();
-            }
-        }
-
-        function renderCommonItemButtons() {
-            const container = document.getElementById('common-items-container');
-            container.innerHTML = '';
-            Object.keys(commonItems).forEach(name => {
-                const button = document.createElement('button');
-                button.textContent = name;
-                button.className = 'btn-main rounded-lg py-3 font-semibold text-base sm:text-lg transition-transform transform hover:scale-105';
-                button.onclick = () => logCommonItem(name);
-                container.appendChild(button);
-            });
-        }
-
-        function renderManageItemsList() {
-            const listContainer = document.getElementById('current-items-list');
-            listContainer.innerHTML = '';
-            Object.entries(commonItems).forEach(([name, portions]) => {
-                const itemDiv = document.createElement('div');
-                itemDiv.className = 'flex justify-between items-center p-2 border-b border-gray-200';
-                itemDiv.innerHTML = `
-                    <span class="text-sm">${name} (P:${portions.p} V:${portions.v} C:${portions.c} F:${portions.f})</span>
-                    <div>
-                        <button onclick="populateEditForm('${name}')" class="text-xs btn-secondary px-2 py-1 rounded-md mr-1">Edit</button>
-                        <button onclick="deleteCommonItem('${name}')" class="text-xs btn-danger px-2 py-1 rounded-md">Del</button>
-                    </div>
-                `;
-                listContainer.appendChild(itemDiv);
-            });
-        }
-
-        document.getElementById('manage-form').addEventListener('submit', function(event) {
-            event.preventDefault();
-            const name = document.getElementById('item-name').value.trim();
-            const p = parseFloat(document.getElementById('item-p').value) || 0;
-            const v = parseFloat(document.getElementById('item-v').value) || 0;
-            const c = parseFloat(document.getElementById('item-c').value) || 0;
-            const f = parseFloat(document.getElementById('item-f').value) || 0;
-            const editItemName = document.getElementById('edit-item-name').value;
-
-            if (!name) {
-                alert("Item name cannot be empty.");
-                return;
-            }
-
-            if (editItemName && editItemName !== name && commonItems[name]) {
-                alert("An item with this new name already exists. Please choose a different name.");
-                return;
-            }
-
-            if (editItemName && editItemName !== name) {
-                delete commonItems[editItemName];
-            }
-            commonItems[name] = { p, v, c, f };
-
-            this.reset();
-            document.getElementById('edit-item-name').value = '';
-            document.getElementById('save-item-btn').textContent = 'Add Item';
-            updateDisplay();
-            closeModal('manage-modal');
-        });
-
-        function updateProteinTarget(value) {
-            trackerData.protein.target = parseFloat(value) || 5;
-            updateDisplay();
-        }
-
-        function updateVeggiesTarget(value) {
-            trackerData.veggies.target = parseFloat(value) || 7;
-            updateDisplay();
-        }
-
-        function updateCarbsTarget(value) {
-            trackerData.carbs.target = parseFloat(value) || 9;
-            updateDisplay();
-        }
-
-        function updateFatTarget(value) {
-            trackerData.fat.target = parseFloat(value) || 6;
-            updateDisplay();
-        }
-
-        function updateHandSize(value) {
-            trackerData.handSize = value;
-            selectedHandSize = value;
-            updateDisplay();
-        }
-
-        function populateEditForm(name) {
-            const item = commonItems[name];
-            if (!item) return;
-            document.getElementById('item-name').value = name;
-            document.getElementById('item-p').value = item.p;
-            document.getElementById('item-v').value = item.v;
-            document.getElementById('item-c').value = item.c;
-            document.getElementById('item-f').value = item.f;
-            document.getElementById('save-item-btn').textContent = 'Update Item';
-            openModal('manage-modal');
-        }
-
-        function deleteCommonItem(name) {
-            if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-                delete commonItems[name];
-                updateDisplay();
-            }
-        }
-
-        function openModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const modalContent = modal.querySelector('.modal-content');
-            modal.classList.remove('invisible', 'opacity-0');
-            modalContent.classList.remove('scale-95');
-            modalContent.scrollTop = 0;
-        }
-
-        function closeModal(modalId) {
-            const modal = document.getElementById(modalId);
-            const modalContent = modal.querySelector('.modal-content');
-            modalContent.classList.add('scale-95');
-            modal.classList.add('opacity-0');
-            setTimeout(() => modal.classList.add('invisible'), 300);
-        }
-        
-        function saveState() {
-            localStorage.setItem('handPortionTrackerState', JSON.stringify(trackerData));
-            localStorage.setItem('handPortionCommonItems', JSON.stringify(commonItems));
-        }
-
-        function loadState() {
-            const savedTrackerData = localStorage.getItem('handPortionTrackerState');
-            if (savedTrackerData) {
-                const loadedData = JSON.parse(savedTrackerData);
-                for (const key in trackerData) {
-                    if (loadedData.hasOwnProperty(key) && loadedData[key].hasOwnProperty('current')) {
-                        trackerData[key].current = loadedData[key].current;
-                    }
-                    if (loadedData.hasOwnProperty(key) && loadedData[key].hasOwnProperty('target')) {
-                        trackerData[key].target = loadedData[key].target;
-                    }
-                    const formElement = document.getElementById(`form-${key}-target`);
-                    if (formElement) {
-                        formElement.value = loadedData[key].target;
-                    }
-                }
-                const handSize = loadedData.handSize || 'medium';
-                trackerData.handSize = handSize;
-                selectedHandSize = handSize;
-                const formElement = document.getElementById('form-hand-size');
-                if (formElement) {
-                    formElement.value = handSize;
-                }
-            }
-            const savedCommonItems = localStorage.getItem('handPortionCommonItems');
-            if (savedCommonItems) {
-                commonItems = JSON.parse(savedCommonItems);
-            }
-            updateDisplay();
-        }
-
-        document.getElementById('reset-day').addEventListener('click', resetDay);
-        document.getElementById('show-cheat-sheet').addEventListener('click', () => openModal('cheat-sheet-modal'));
-        document.getElementById('close-cheat-sheet').addEventListener('click', () => closeModal('cheat-sheet-modal'));
-        document.getElementById('cheat-sheet-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('cheat-sheet-modal')) closeModal('cheat-sheet-modal');
-        });
-
-        document.getElementById('manage-btn').addEventListener('click', () => {
-            document.getElementById('manage-form').reset();
-            document.getElementById('edit-item-name').value = '';
-            document.getElementById('save-item-btn').textContent = 'Add Item';
-            openModal('manage-modal');
-        });
-        document.getElementById('close-manage').addEventListener('click', () => closeModal('manage-modal'));
-        document.getElementById('manage-modal').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('manage-modal')) closeModal('manage-modal');
-        });
-        
-        document.addEventListener('DOMContentLoaded', loadState);
-    </script>
+    document.getElementById('save-day').onclick = () => {
+      const date = new Date().toISOString().split('T')[0];
+      const log = JSON.parse(localStorage.getItem(LOG_KEY)||'[]');
+      // log food
+      Object.keys(current).forEach(k => log.push({ date, measurement: k, value: current[k] }));
+      // log meditation
+      const med = JSON.parse(localStorage.getItem(MED_KEY) || '{}');
+      ['bed','meditation','snack','mood'].forEach(k => log.push({ date, measurement: k, value: med[k]||0 }));
+      // log exercise
+      const ex = JSON.parse(localStorage.getItem(EX_KEY) || '{}');
+      ['cardio','pushups','rows','squats','bridges','physio'].forEach(k => log.push({ date, measurement: k, value: ex[k]||0 }));
+      localStorage.setItem(LOG_KEY, JSON.stringify(log));
+      // reset all
+      current = { protein:0, veggies:0, carbs:0, fat:0 };
+      saveCurrent();
+      localStorage.setItem(MED_KEY, JSON.stringify({ bed:false, meditation:false, snack:0, mood:0 }));
+      localStorage.setItem(EX_KEY, JSON.stringify({ cardio:false, physio:false, pushups:0, rows:0, squats:0, bridges:0 }));
+      updateUI(); updateCalories();
+      alert('All data logged for ' + date);
+    };
+    document.addEventListener('DOMContentLoaded', loadCurrent);
+  </script>
 </body>
 </html>

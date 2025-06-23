@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meditation & Habits</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; }
+    .section-btn:hover { background-color: #f0f0f0; }
+    .btn-active { background-color: #4ade80 !important; color: white !important; }
+    .emoji-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; margin: 0 .25rem; padding: .25rem; border-radius: .5rem; }
+    .emoji-selected { background-color: #4ade80; color: white; transform: scale(1.2); }
+    .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; padding: .5rem .75rem; border-radius: .5rem; }
+    .btn-control:hover { background-color: #e5e7eb; }
+  </style>
+</head>
+<body class="text-gray-800">
+  <div class="container mx-auto max-w-2xl p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">Meditation & Habits</h1>
+    <!-- Bed by 22:00 -->
+    <button id="bed-btn" class="section-btn">
+      <h2 class="text-xl mb-2">🛏️ Bed by 22:00</h2>
+      <span id="bed-status" class="text-2xl font-bold"></span>
+    </button>
+    <!-- Meditation as boolean -->
+    <button id="med-btn" class="section-btn">
+      <h2 class="text-xl mb-2">🧘 Meditation</h2>
+      <span id="med-status" class="text-2xl font-bold"></span>
+    </button>
+    <!-- Meditation Snacks: click area adds 1 -->
+    <div id="snack-btn" class="section-btn">
+      <h2 class="text-xl mb-2">🍵 Meditation Snacks</h2>
+      <span id="snack-count" class="text-2xl font-bold"></span>
+      <div class="mt-2">
+        <button onclick="event.stopPropagation(); modify('snack',1)" class="btn-control mr-2">+1</button>
+        <button onclick="event.stopPropagation(); modify('snack',-1)" class="btn-control">-1</button>
+      </div>
+    </div>
+    <!-- Mood rating -->
+    <div class="section-btn">
+      <h2 class="text-xl mb-2">😊 Mood</h2>
+      <div id="mood-buttons">
+        <button class="emoji-btn" data-value="1">😞</button>
+        <button class="emoji-btn" data-value="2">😐</button>
+        <button class="emoji-btn" data-value="3">😌</button>
+        <button class="emoji-btn" data-value="4">😊</button>
+        <button class="emoji-btn" data-value="5">😁</button>
+      </div>
+    </div>
+  </div>
+  <script>
+    const KEY_M = 'med_habits';
+    let data = {};
+    function load() {
+      data = JSON.parse(localStorage.getItem(KEY_M) || JSON.stringify({ bed: false, meditation: false, snack: 0, mood: 0 }));
+      // Bed button highlight
+      const bedBtn = document.getElementById('bed-btn');
+      bedBtn.classList.toggle('btn-active', data.bed);
+      document.getElementById('bed-status').textContent = data.bed ? 'Done' : 'Not done';
+      // Meditation button highlight
+      const medBtn = document.getElementById('med-btn');
+      medBtn.classList.toggle('btn-active', data.meditation);
+      document.getElementById('med-status').textContent = data.meditation ? 'Done' : 'Not done';
+      // Snacks count
+      document.getElementById('snack-count').textContent = data.snack;
+      // Mood buttons highlight
+      document.querySelectorAll('.emoji-btn').forEach(btn => {
+        const val = parseInt(btn.dataset.value, 10);
+        btn.classList.toggle('emoji-selected', data.mood === val);
+      });
+    }
+    function save() { localStorage.setItem(KEY_M, JSON.stringify(data)); }
+    document.getElementById('bed-btn').onclick = () => { data.bed = !data.bed; save(); load(); };
+    document.getElementById('med-btn').onclick = () => { data.meditation = !data.meditation; save(); load(); };
+    document.getElementById('snack-btn').onclick = () => { modify('snack',1); };
+    function modify(key, delta) { data[key] = Math.max(0, (data[key]||0) + delta); save(); load(); }
+    document.getElementById('mood-buttons').addEventListener('click', e => {
+      if (!e.target.matches('.emoji-btn')) return;
+      data.mood = +e.target.dataset.value;
+      save(); load();
+    });
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>

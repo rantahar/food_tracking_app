@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Summary of Logged Data</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .container { max-width: 800px; margin: 2rem auto; padding: 1rem; background: white; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    h1 { text-align: center; margin-bottom: 1.5rem; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: .75rem; border: 1px solid #e5e7eb; text-align: left; }
+    th { background-color: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Logged Data History</h1>
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Measurement</th><th>Value</th></tr>
+      </thead>
+      <tbody id="log-table-body">
+        <!-- Rows inserted here -->
+      </tbody>
+    </table>
+  </div>
+  <script>
+    const log = JSON.parse(localStorage.getItem('daily_log') || '[]');
+    const tbody = document.getElementById('log-table-body');
+    // Sort by date
+    log.sort((a, b) => a.date.localeCompare(b.date));
+    log.forEach(entry => {
+      const tr = document.createElement('tr');
+      const tdDate = document.createElement('td'); tdDate.textContent = entry.date;
+      const tdMeas = document.createElement('td'); tdMeas.textContent = entry.measurement;
+      const tdVal = document.createElement('td'); tdVal.textContent = entry.value;
+      tr.append(tdDate, tdMeas, tdVal);
+      tbody.appendChild(tr);
+    });
+  </script>
+</body>
+</html>

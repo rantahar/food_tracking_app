@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exercise Tracker</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; }
+    .section-btn:hover { background-color: #f0f0f0; }
+    .btn-active { background-color: #4ade80 !important; color: white !important; }
+    .count-display { font-size: 1.5rem; font-weight: bold; margin-top: .5rem; display: block; }
+  </style>
+</head>
+<body class="text-gray-800">
+  <div class="container mx-auto max-w-2xl p-6">
+    <h1 class="text-3xl font-bold text-center mb-6">Exercise Tracker</h1>
+    <!-- Cardio boolean -->
+    <button id="cardio-btn" class="section-btn">
+      <h2 class="text-xl">🏃 Cardio</h2>
+      <span id="cardio-status" class="count-display"></span>
+    </button>
+    <!-- Pushups count -->
+    <div id="pushups-section" class="section-btn">
+      <h2 class="text-xl">💪 Pushups</h2>
+      <span id="pushups-count" class="count-display">0</span>
+    </div>
+    <!-- Rows count -->
+    <div id="rows-section" class="section-btn">
+      <h2 class="text-xl">🚣 Rows</h2>
+      <span id="rows-count" class="count-display">0</span>
+    </div>
+    <!-- Squats count -->
+    <div id="squats-section" class="section-btn">
+      <h2 class="text-xl">🦵 Squats</h2>
+      <span id="squats-count" class="count-display">0</span>
+    </div>
+    <!-- Bridges count -->
+    <div id="bridges-section" class="section-btn">
+      <h2 class="text-xl">🌉 Bridges</h2>
+      <span id="bridges-count" class="count-display">0</span>
+    </div>
+    <!-- Physio boolean -->
+    <button id="physio-btn" class="section-btn">
+      <h2 class="text-xl">🤸 Physio</h2>
+      <span id="physio-status" class="count-display"></span>
+    </button>
+  </div>
+  <script>
+    const KEY_E = 'exercise_logs';
+    let data = {};
+    function load() {
+      data = JSON.parse(localStorage.getItem(KEY_E) || JSON.stringify({ cardio: false, physio: false, pushups: 0, rows: 0, squats: 0, bridges: 0 }));
+      // Cardio toggle
+      const cardioBtn = document.getElementById('cardio-btn');
+      cardioBtn.classList.toggle('btn-active', data.cardio);
+      document.getElementById('cardio-status').textContent = data.cardio ? 'Done' : 'Not done';
+      // Physio toggle
+      const physioBtn = document.getElementById('physio-btn');
+      physioBtn.classList.toggle('btn-active', data.physio);
+      document.getElementById('physio-status').textContent = data.physio ? 'Done' : 'Not done';
+      // Counts
+      ['pushups','rows','squats','bridges'].forEach(key => {
+        document.getElementById(`${key}-count`).textContent = data[key];
+      });
+    }
+    function save() { localStorage.setItem(KEY_E, JSON.stringify(data)); }
+    // Cardio toggle
+    document.getElementById('cardio-btn').onclick = () => { data.cardio = !data.cardio; save(); load(); };
+    // Physio toggle
+    document.getElementById('physio-btn').onclick = () => { data.physio = !data.physio; save(); load(); };
+    // Increment counts on section click
+    ['pushups','rows','squats','bridges'].forEach(key => {
+      document.getElementById(`${key}-section`).onclick = () => {
+        data[key] = (data[key] || 0) + 1;
+        save(); load();
+      };
+    });
+    document.addEventListener('DOMContentLoaded', load);
+  </script>
+</body>
+</html>
