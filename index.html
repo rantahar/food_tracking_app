@@ -92,41 +92,7 @@
       <button id="save-day" class="btn-secondary">Save Day</button>
     </div>
   </div>
-  <script src="https://apis.google.com/js/api.js"></script>
 <script>
-    // Google API setup
-    const CLIENT_ID = '433500571744-altsk72vrl1mn1mc79sejcbtqva2407u.apps.googleusercontent.com';
-    const SPREADSHEET_ID = '1_FEmqSLqdQx4Z4VOSmE11wEKOtZSD7CoofzeRXGO7yU';
-    const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-
-    // Load gapi and initialize client
-    function initClient() {
-      gapi.client.init({
-        clientId: CLIENT_ID,
-        discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
-        scope: SCOPES
-      }).then(() => {
-        const authInstance = gapi.auth2.getAuthInstance();
-        authInstance.isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(authInstance.isSignedIn.get());
-      });
-    }
-
-    // Enable Save button when signed in
-    function updateSigninStatus(isSignedIn) {
-      document.getElementById('save-day').disabled = !isSignedIn;
-    }
-
-    function handleAuthClick() {
-      gapi.auth2.getAuthInstance().signIn();
-    }
-
-    function handleSignoutClick() {
-      gapi.auth2.getAuthInstance().signOut();
-    }
-
-    gapi.load('client:auth2', initClient);
-
     // Append a row to the sheet
     function appendRow(values) {
       return gapi.client.sheets.spreadsheets.values.append({
@@ -186,31 +152,26 @@
 
     // Save Day replaces local logging with Google Sheets append
     document.getElementById('save-day').onclick = () => {
-      handleAuthClick();
       const date = new Date().toISOString().split('T')[0];
-      // Log food
-      Object.keys(current).forEach(k => {
-        appendRow([date, k, current[k]]);
-      });
-      // Log meditation
+      const rows = [];
+      // food
+      Object.entries(current).forEach(([k,v]) => rows.push([date, k, v]));
+      // meditation
       const med = JSON.parse(localStorage.getItem(MED_KEY) || '{}');
-      ['bed','meditation','snack','mood'].forEach(k => {
-        appendRow([date, k, med[k]||0]);
-      });
-      // Log exercise
+      ['bed','meditation','snack','mood'].forEach(k => rows.push([date, k, med[k]||0]));
+      // exercise
       const ex = JSON.parse(localStorage.getItem(EX_KEY) || '{}');
-      ['cardio','pushups','rows','squats','bridges','physio'].forEach(k => {
-        appendRow([date, k, ex[k]||0]);
-      });
-      // Reset all trackers
-      current = { protein:0, veggies:0, carbs:0, fat:0 };
-      saveCurrent();
-      localStorage.setItem(MED_KEY, JSON.stringify({ bed:false, meditation:false, snack:0, mood:0 }));
-      localStorage.setItem(EX_KEY, JSON.stringify({ cardio:false, physio:false, pushups:0, rows:0, squats:0, bridges:0 }));
-      updateUI(); updateCalories();
-      alert('All data sent to Google Sheets for ' + date);
+      ['cardio','pushups','rows','squats','bridges','physio'].forEach(k => rows.push([date, k, ex[k]||0]));
+      // Build CSV
+      const header = ['date','measurement','value'];
+      const csv = [header.join(', '), ...rows.map(r => r.join(', '))].join('\n');
+      // Copy
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(csv).then(() => alert('CSV copied! Paste into your sheet.'), () => prompt('Copy CSV', csv));
+      } else {
+        prompt('Copy CSV', csv);
+      }
     };
-
     document.addEventListener('DOMContentLoaded', loadCurrent);
 </script>
 </body>
