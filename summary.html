@@ -3,41 +3,280 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Summary of Logged Data</title>
+  <title>Tracker Summary</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js library for plotting -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
-    .container { max-width: 800px; margin: 2rem auto; padding: 1rem; background: white; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    h1 { text-align: center; margin-bottom: 1.5rem; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { padding: .75rem; border: 1px solid #e5e7eb; text-align: left; }
-    th { background-color: #f0f0f0; }
+    .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-main:hover { background-color: #2a6e62; }
+    .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+    .btn-secondary:hover { background-color: #e9e9d9; }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #auth-container, #app-container { transition: opacity 0.5s ease-in-out; }
+    .hidden { display: none; }
+    .chart-container { background: white; padding: 1.5rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1.5rem; }
   </style>
 </head>
-<body>
-  <div class="container">
-    <h1>Logged Data History</h1>
-    <table>
-      <thead>
-        <tr><th>Date</th><th>Measurement</th><th>Value</th></tr>
-      </thead>
-      <tbody id="log-table-body">
-        <!-- Rows inserted here -->
-      </tbody>
-    </table>
+<body class="text-gray-800">
+
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Tracker Summary</h2>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
   </div>
-  <script>
-    const log = JSON.parse(localStorage.getItem('daily_log') || '[]');
-    const tbody = document.getElementById('log-table-body');
-    // Sort by date
-    log.sort((a, b) => a.date.localeCompare(b.date));
-    log.forEach(entry => {
-      const tr = document.createElement('tr');
-      const tdDate = document.createElement('td'); tdDate.textContent = entry.date;
-      const tdMeas = document.createElement('td'); tdMeas.textContent = entry.measurement;
-      const tdVal = document.createElement('td'); tdVal.textContent = entry.value;
-      tr.append(tdDate, tdMeas, tdVal);
-      tbody.appendChild(tr);
+
+  <!-- Main App Section -->
+  <div id="app-container" class="container mx-auto max-w-4xl p-6 hidden">
+    <header class="text-center mb-8 relative">
+        <h1 class="text-3xl font-bold">Summary &amp; History</h1>
+        <div class="absolute top-0 right-0 flex items-center">
+            <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
+            <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
+        </div>
+    </header>
+
+    <div id="loading-message" class="text-center">Loading data...</div>
+    
+    <div id="charts-container" class="hidden">
+      <div class="chart-container">
+        <h2 class="text-xl font-bold mb-4 text-center">Calorie Intake Over Time</h2>
+        <canvas id="calories-chart"></canvas>
+      </div>
+      <div class="chart-container">
+        <h2 class="text-xl font-bold mb-4 text-center">Mood Over Time</h2>
+        <canvas id="mood-chart"></canvas>
+      </div>
+       <div class="chart-container">
+        <h2 class="text-xl font-bold mb-4 text-center">Habit Frequency</h2>
+        <canvas id="habits-chart"></canvas>
+      </div>
+    </div>
+    
+    <div class="text-center mt-8">
+        <button id="export-csv-btn" class="btn-main">Export All Data to CSV</button>
+    </div>
+  </div>
+
+  <div id="feedback-toast" class="feedback"></div>
+
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
+
+    // --- Application State ---
+    let db, auth;
+    let userId = null;
+    let charts = {}; // To hold chart instances
+    let allData = []; // To hold all fetched data for export
+
+    // --- DOM Elements ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const toast = document.getElementById('feedback-toast');
+    const loadingMessage = document.getElementById('loading-message');
+    const chartsContainer = document.getElementById('charts-container');
+    const exportBtn = document.getElementById('export-csv-btn');
+
+    // --- UI & Utility Functions ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    };
+
+    const caloriesPerPortion = { protein: 145, veggies: 25, carbs: 120, fat: 100 };
+    const calculateCalories = (foodData) => {
+        if (!foodData) return 0;
+        return Object.entries(foodData).reduce((sum, [k, v]) => sum + v * (caloriesPerPortion[k] || 0), 0);
+    };
+
+    // --- Chart Rendering ---
+    const renderCharts = (data) => {
+        const labels = data.map(d => d.date);
+
+        // Destroy old charts if they exist
+        Object.values(charts).forEach(chart => chart.destroy());
+
+        // Calories Chart
+        const caloriesData = data.map(d => calculateCalories(d.food));
+        const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
+        charts.calories = new Chart(caloriesCtx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Total Calories',
+                    data: caloriesData,
+                    borderColor: '#348a7b',
+                    backgroundColor: 'rgba(52, 138, 123, 0.1)',
+                    tension: 0.1,
+                    fill: true,
+                }]
+            }
+        });
+
+        // Mood Chart
+        const moodData = data.map(d => d.habits?.mood || null); // Use null for missing data
+        const moodCtx = document.getElementById('mood-chart').getContext('2d');
+        charts.mood = new Chart(moodCtx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Mood (1-5)',
+                    data: moodData,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    spanGaps: true, // Connect lines over null data points
+                    tension: 0.1,
+                }]
+            },
+             options: { scales: { y: { beginAtZero: true, max: 5 } } }
+        });
+
+        // Habits Chart
+        const habitCounts = {
+            bed: data.filter(d => d.habits?.bed).length,
+            meditation: data.filter(d => d.habits?.meditation).length,
+            cardio: data.filter(d => d.exercise?.cardio).length,
+            physio: data.filter(d => d.exercise?.physio).length,
+        };
+        const habitsCtx = document.getElementById('habits-chart').getContext('2d');
+        charts.habits = new Chart(habitsCtx, {
+            type: 'bar',
+            data: {
+                labels: Object.keys(habitCounts),
+                datasets: [{
+                    label: 'Total Days Completed',
+                    data: Object.values(habitCounts),
+                    backgroundColor: ['#6366f1', '#ec4899', '#10b981', '#8b5cf6'],
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true } } }
+        });
+        
+        loadingMessage.classList.add('hidden');
+        chartsContainer.classList.remove('hidden');
+    };
+
+    // --- Data Fetching and Processing ---
+    const fetchAndProcessData = async () => {
+        if (!userId) return;
+        loadingMessage.classList.remove('hidden');
+        chartsContainer.classList.add('hidden');
+
+        const logsRef = collection(db, 'users', userId, 'daily_logs');
+        const querySnapshot = await getDocs(logsRef);
+        
+        allData = querySnapshot.docs.map(doc => ({
+            date: doc.id,
+            ...doc.data()
+        })).sort((a, b) => a.date.localeCompare(b.date)); // Sort by date
+
+        if (allData.length > 0) {
+            renderCharts(allData);
+        } else {
+            loadingMessage.textContent = "No data found to display.";
+        }
+    };
+    
+    // --- CSV Export ---
+    const exportToCsv = () => {
+        if (allData.length === 0) {
+            showFeedback("No data to export.", true);
+            return;
+        }
+        
+        let csvContent = "data:text/csv;charset=utf-8,";
+        const headers = ["date", "category", "measurement", "value"];
+        csvContent += headers.join(",") + "\r\n";
+
+        allData.forEach(log => {
+            const date = log.date;
+            // Flatten food data
+            if(log.food) Object.entries(log.food).forEach(([key, value]) => csvContent += `${date},food,${key},${value}\r\n`);
+            // Flatten habits data
+            if(log.habits) Object.entries(log.habits).forEach(([key, value]) => csvContent += `${date},habits,${key},${value}\r\n`);
+            // Flatten exercise data
+            if(log.exercise) Object.entries(log.exercise).forEach(([key, value]) => csvContent += `${date},exercise,${key},${value}\r\n`);
+        });
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "tracker_export.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // --- Initialization & Auth Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            userEmailSpan.textContent = user.email;
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            fetchAndProcessData();
+          } else {
+            userId = null;
+            userEmailSpan.textContent = '';
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+            loadingMessage.textContent = "Please log in to see your summary.";
+            chartsContainer.classList.add('hidden');
+          }
+        });
+
+        loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
+        signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
+        logoutBtn.addEventListener('click', () => signOut(auth));
+        exportBtn.addEventListener('click', exportToCsv);
+
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+        showFeedback("Failed to initialize the application.", true);
+      }
     });
   </script>
 </body>

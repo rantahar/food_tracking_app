@@ -4,42 +4,72 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Meditation & Habits</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
-    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; }
-    .section-btn:hover { background-color: #f0f0f0; }
+    .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-main:hover { background-color: #2a6e62; }
+    .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+    .btn-secondary:hover { background-color: #e9e9d9; }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #auth-container, #app-container { transition: opacity 0.5s ease-in-out; }
+    .hidden { display: none; }
+    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; transition: background-color 0.2s; }
+    .section-btn:hover { background-color: #f9fafb; }
     .btn-active { background-color: #4ade80 !important; color: white !important; }
-    .emoji-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; margin: 0 .25rem; padding: .25rem; border-radius: .5rem; }
+    .emoji-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; margin: 0 .25rem; padding: .25rem; border-radius: .5rem; transition: background-color 0.2s, transform 0.2s; }
     .emoji-selected { background-color: #4ade80; color: white; transform: scale(1.2); }
     .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; padding: .5rem .75rem; border-radius: .5rem; }
     .btn-control:hover { background-color: #e5e7eb; }
   </style>
 </head>
 <body class="text-gray-800">
-  <div class="container mx-auto max-w-2xl p-6">
-    <h1 class="text-3xl font-bold text-center mb-6">Meditation & Habits</h1>
-    <!-- Bed by 22:00 -->
+
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Meditation & Habits</h2>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
+  </div>
+
+  <!-- Main App Section -->
+  <div id="app-container" class="container mx-auto max-w-2xl p-6 hidden">
+    <header class="text-center mb-6 relative">
+        <h1 class="text-3xl font-bold">Meditation & Habits</h1>
+        <div class="absolute top-0 right-0 flex items-center">
+            <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
+            <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
+        </div>
+    </header>
+    
     <button id="bed-btn" class="section-btn">
-      <h2 class="text-xl mb-2">🛏️ Bed by 22:00</h2>
+      <h2 class="text-xl mb-2">🛏️ Slept by 22:00 (Last Night)</h2>
       <span id="bed-status" class="text-2xl font-bold"></span>
     </button>
-    <!-- Meditation as boolean -->
     <button id="med-btn" class="section-btn">
       <h2 class="text-xl mb-2">🧘 Meditation</h2>
       <span id="med-status" class="text-2xl font-bold"></span>
     </button>
-    <!-- Meditation Snacks: click area adds 1 -->
     <div id="snack-btn" class="section-btn">
       <h2 class="text-xl mb-2">🍵 Meditation Snacks</h2>
       <span id="snack-count" class="text-2xl font-bold"></span>
       <div class="mt-2">
-        <button onclick="event.stopPropagation(); modify('snack',1)" class="btn-control mr-2">+1</button>
-        <button onclick="event.stopPropagation(); modify('snack',-1)" class="btn-control">-1</button>
+        <button onclick="event.stopPropagation(); window.modifyHabit('snack', 1)" class="btn-control mr-2">+1</button>
+        <button onclick="event.stopPropagation(); window.modifyHabit('snack', -1)" class="btn-control">-1</button>
       </div>
     </div>
-    <!-- Mood rating -->
-    <div class="section-btn">
+    <div class="section-btn" style="cursor: default;">
       <h2 class="text-xl mb-2">😊 Mood</h2>
       <div id="mood-buttons">
         <button class="emoji-btn" data-value="1">😞</button>
@@ -50,38 +80,185 @@
       </div>
     </div>
   </div>
-  <script>
-    const KEY_M = 'med_habits';
-    let data = {};
-    function load() {
-      data = JSON.parse(localStorage.getItem(KEY_M) || JSON.stringify({ bed: false, meditation: false, snack: 0, mood: 0 }));
-      // Bed button highlight
-      const bedBtn = document.getElementById('bed-btn');
-      bedBtn.classList.toggle('btn-active', data.bed);
-      document.getElementById('bed-status').textContent = data.bed ? 'Done' : 'Not done';
-      // Meditation button highlight
-      const medBtn = document.getElementById('med-btn');
-      medBtn.classList.toggle('btn-active', data.meditation);
-      document.getElementById('med-status').textContent = data.meditation ? 'Done' : 'Not done';
-      // Snacks count
-      document.getElementById('snack-count').textContent = data.snack;
-      // Mood buttons highlight
-      document.querySelectorAll('.emoji-btn').forEach(btn => {
-        const val = parseInt(btn.dataset.value, 10);
-        btn.classList.toggle('emoji-selected', data.mood === val);
-      });
+
+  <div id="feedback-toast" class="feedback"></div>
+
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
+
+    // --- Application State and Constants ---
+    let db, auth;
+    let userId = null;
+    let unsubscribeSnapshot = null;
+    let currentHabitData = { bed: false, meditation: false, snack: 0, mood: 0 };
+
+    // --- DOM Elements ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const toast = document.getElementById('feedback-toast');
+
+    // --- UI Update Functions ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
-    function save() { localStorage.setItem(KEY_M, JSON.stringify(data)); }
-    document.getElementById('bed-btn').onclick = () => { data.bed = !data.bed; save(); load(); };
-    document.getElementById('med-btn').onclick = () => { data.meditation = !data.meditation; save(); load(); };
-    document.getElementById('snack-btn').onclick = () => { modify('snack',1); };
-    function modify(key, delta) { data[key] = Math.max(0, (data[key]||0) + delta); save(); load(); }
-    document.getElementById('mood-buttons').addEventListener('click', e => {
-      if (!e.target.matches('.emoji-btn')) return;
-      data.mood = +e.target.dataset.value;
-      save(); load();
+
+    const updateHabitsUI = () => {
+        const { bed, meditation, snack, mood } = currentHabitData;
+
+        const bedBtn = document.getElementById('bed-btn');
+        bedBtn.classList.toggle('btn-active', bed);
+        document.getElementById('bed-status').textContent = bed ? 'Done' : 'Not done';
+
+        const medBtn = document.getElementById('med-btn');
+        medBtn.classList.toggle('btn-active', meditation);
+        document.getElementById('med-status').textContent = meditation ? 'Done' : 'Not done';
+
+        document.getElementById('snack-count').textContent = snack;
+        
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.classList.toggle('emoji-selected', mood === parseInt(btn.dataset.value));
+        });
+    };
+    
+    // --- Data Logic Functions ---
+    const getTodaysDateString = () => new Date().toISOString().split('T')[0];
+
+    const saveHabitDataToFirestore = async () => {
+      if (!userId) return;
+      const dateStr = getTodaysDateString();
+      const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+      try {
+        await setDoc(docRef, { habits: currentHabitData }, { merge: true });
+      } catch (error) {
+        console.error("Error saving habit data: ", error);
+        showFeedback("Error saving data.", true);
+      }
+    };
+    
+    const listenToTodaysData = () => {
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        if (!userId) return;
+
+        const dateStr = getTodaysDateString();
+        const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+
+        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
+            if (docSnap.exists()) {
+                currentHabitData = docSnap.data().habits || defaultData;
+            } else {
+                currentHabitData = defaultData;
+            }
+            updateHabitsUI();
+        }, (error) => {
+            console.error("Error listening to data:", error);
+            showFeedback("Error fetching real-time data.", true);
+        });
+    };
+    
+    // --- Global Functions ---
+    window.toggleHabit = (key) => {
+        currentHabitData[key] = !currentHabitData[key];
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    };
+
+    window.modifyHabit = (key, delta) => {
+        currentHabitData[key] = Math.max(0, (currentHabitData[key] || 0) + delta);
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    };
+
+    window.setHabit = (key, value) => {
+        currentHabitData[key] = value;
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    }
+    
+    // --- Initialization & Auth Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            userEmailSpan.textContent = user.email;
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            listenToTodaysData();
+          } else {
+            userId = null;
+            userEmailSpan.textContent = '';
+            if(unsubscribeSnapshot) unsubscribeSnapshot();
+            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
+            currentHabitData = defaultData;
+            updateHabitsUI();
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+          }
+        });
+
+        loginBtn.addEventListener('click', async () => {
+            try {
+                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Logged in successfully!");
+            } catch (error) {
+                showFeedback(`Login failed: ${error.message}`, true);
+            }
+        });
+
+        signupBtn.addEventListener('click', async () => {
+            try {
+                await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Signed up successfully!");
+            } catch (error) {
+                showFeedback(`Signup failed: ${error.message}`, true);
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        // Event listeners for habit buttons
+        document.getElementById('bed-btn').onclick = () => window.toggleHabit('bed');
+        document.getElementById('med-btn').onclick = () => window.toggleHabit('meditation');
+        document.getElementById('snack-btn').onclick = () => window.modifyHabit('snack', 1);
+        document.getElementById('mood-buttons').addEventListener('click', e => {
+            if (e.target.matches('.emoji-btn')) {
+                window.setHabit('mood', parseInt(e.target.dataset.value));
+            }
+        });
+
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+        showFeedback("Failed to initialize the application.", true);
+      }
     });
-    document.addEventListener('DOMContentLoaded', load);
   </script>
 </body>
 </html>

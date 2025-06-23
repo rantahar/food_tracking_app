@@ -4,80 +4,252 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Exercise Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
-    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; }
-    .section-btn:hover { background-color: #f0f0f0; }
+    .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-main:hover { background-color: #2a6e62; }
+    .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+    .btn-secondary:hover { background-color: #e9e9d9; }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #auth-container, #app-container { transition: opacity 0.5s ease-in-out; }
+    .hidden { display: none; }
+    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; transition: background-color 0.2s; }
+    .section-btn:hover { background-color: #f9fafb; }
     .btn-active { background-color: #4ade80 !important; color: white !important; }
     .count-display { font-size: 1.5rem; font-weight: bold; margin-top: .5rem; display: block; }
+    .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; padding: .5rem .75rem; border-radius: .5rem; }
+    .btn-control:hover { background-color: #e5e7eb; }
   </style>
 </head>
 <body class="text-gray-800">
-  <div class="container mx-auto max-w-2xl p-6">
-    <h1 class="text-3xl font-bold text-center mb-6">Exercise Tracker</h1>
-    <!-- Cardio boolean -->
+
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Exercise Tracker</h2>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
+  </div>
+
+  <!-- Main App Section -->
+  <div id="app-container" class="container mx-auto max-w-2xl p-6 hidden">
+    <header class="text-center mb-6 relative">
+        <h1 class="text-3xl font-bold">Exercise Tracker</h1>
+        <div class="absolute top-0 right-0 flex items-center">
+            <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
+            <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
+        </div>
+    </header>
+    
     <button id="cardio-btn" class="section-btn">
       <h2 class="text-xl">🏃 Cardio</h2>
       <span id="cardio-status" class="count-display"></span>
     </button>
-    <!-- Pushups count -->
     <div id="pushups-section" class="section-btn">
       <h2 class="text-xl">💪 Pushups</h2>
       <span id="pushups-count" class="count-display">0</span>
+      <div class="mt-2"><button onclick="event.stopPropagation(); window.modifyExercise('pushups', -1)" class="btn-control">-1</button></div>
     </div>
-    <!-- Rows count -->
     <div id="rows-section" class="section-btn">
       <h2 class="text-xl">🚣 Rows</h2>
       <span id="rows-count" class="count-display">0</span>
+      <div class="mt-2"><button onclick="event.stopPropagation(); window.modifyExercise('rows', -1)" class="btn-control">-1</button></div>
     </div>
-    <!-- Squats count -->
     <div id="squats-section" class="section-btn">
       <h2 class="text-xl">🦵 Squats</h2>
       <span id="squats-count" class="count-display">0</span>
+      <div class="mt-2"><button onclick="event.stopPropagation(); window.modifyExercise('squats', -1)" class="btn-control">-1</button></div>
     </div>
-    <!-- Bridges count -->
     <div id="bridges-section" class="section-btn">
       <h2 class="text-xl">🌉 Bridges</h2>
       <span id="bridges-count" class="count-display">0</span>
+      <div class="mt-2"><button onclick="event.stopPropagation(); window.modifyExercise('bridges', -1)" class="btn-control">-1</button></div>
     </div>
-    <!-- Physio boolean -->
     <button id="physio-btn" class="section-btn">
       <h2 class="text-xl">🤸 Physio</h2>
       <span id="physio-status" class="count-display"></span>
     </button>
   </div>
-  <script>
-    const KEY_E = 'exercise_logs';
-    let data = {};
-    function load() {
-      data = JSON.parse(localStorage.getItem(KEY_E) || JSON.stringify({ cardio: false, physio: false, pushups: 0, rows: 0, squats: 0, bridges: 0 }));
-      // Cardio toggle
-      const cardioBtn = document.getElementById('cardio-btn');
-      cardioBtn.classList.toggle('btn-active', data.cardio);
-      document.getElementById('cardio-status').textContent = data.cardio ? 'Done' : 'Not done';
-      // Physio toggle
-      const physioBtn = document.getElementById('physio-btn');
-      physioBtn.classList.toggle('btn-active', data.physio);
-      document.getElementById('physio-status').textContent = data.physio ? 'Done' : 'Not done';
-      // Counts
-      ['pushups','rows','squats','bridges'].forEach(key => {
-        document.getElementById(`${key}-count`).textContent = data[key];
-      });
+
+  <div id="feedback-toast" class="feedback"></div>
+
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
+
+    // --- Application State and Constants ---
+    let db, auth;
+    let userId = null;
+    let unsubscribeSnapshot = null;
+    let currentExerciseData = { cardio: false, physio: false, pushups: 0, rows: 0, squats: 0, bridges: 0 };
+
+    // --- DOM Elements ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const toast = document.getElementById('feedback-toast');
+
+    // --- UI Update Functions ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
     }
-    function save() { localStorage.setItem(KEY_E, JSON.stringify(data)); }
-    // Cardio toggle
-    document.getElementById('cardio-btn').onclick = () => { data.cardio = !data.cardio; save(); load(); };
-    // Physio toggle
-    document.getElementById('physio-btn').onclick = () => { data.physio = !data.physio; save(); load(); };
-    // Increment counts on section click
-    ['pushups','rows','squats','bridges'].forEach(key => {
-      document.getElementById(`${key}-section`).onclick = () => {
-        data[key] = (data[key] || 0) + 1;
-        save(); load();
-      };
+
+    const updateExerciseUI = () => {
+        const { cardio, physio, pushups, rows, squats, bridges } = currentExerciseData;
+
+        const cardioBtn = document.getElementById('cardio-btn');
+        cardioBtn.classList.toggle('btn-active', cardio);
+        document.getElementById('cardio-status').textContent = cardio ? 'Done' : 'Not done';
+
+        const physioBtn = document.getElementById('physio-btn');
+        physioBtn.classList.toggle('btn-active', physio);
+        document.getElementById('physio-status').textContent = physio ? 'Done' : 'Not done';
+        
+        document.getElementById('pushups-count').textContent = pushups;
+        document.getElementById('rows-count').textContent = rows;
+        document.getElementById('squats-count').textContent = squats;
+        document.getElementById('bridges-count').textContent = bridges;
+    };
+    
+    // --- Data Logic Functions ---
+    const getTodaysDateString = () => new Date().toISOString().split('T')[0];
+
+    const saveExerciseDataToFirestore = async () => {
+      if (!userId) return;
+      const dateStr = getTodaysDateString();
+      const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+      try {
+        await setDoc(docRef, { exercise: currentExerciseData }, { merge: true });
+      } catch (error) {
+        console.error("Error saving exercise data: ", error);
+        showFeedback("Error saving data.", true);
+      }
+    };
+    
+    const listenToTodaysData = () => {
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        if (!userId) return;
+
+        const dateStr = getTodaysDateString();
+        const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+
+        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+            const defaultData = { cardio: false, physio: false, pushups: 0, rows: 0, squats: 0, bridges: 0 };
+            if (docSnap.exists()) {
+                currentExerciseData = docSnap.data().exercise || defaultData;
+            } else {
+                currentExerciseData = defaultData;
+            }
+            updateExerciseUI();
+        }, (error) => {
+            console.error("Error listening to data:", error);
+            showFeedback("Error fetching real-time data.", true);
+        });
+    };
+    
+    // --- Global Functions ---
+    window.toggleExercise = (key) => {
+        currentExerciseData[key] = !currentExerciseData[key];
+        updateExerciseUI();
+        saveExerciseDataToFirestore();
+    };
+
+    window.modifyExercise = (key, delta) => {
+        currentExerciseData[key] = Math.max(0, (currentExerciseData[key] || 0) + delta);
+        updateExerciseUI();
+        saveExerciseDataToFirestore();
+    };
+    
+    // --- Initialization & Auth Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            userEmailSpan.textContent = user.email;
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            listenToTodaysData();
+          } else {
+            userId = null;
+            userEmailSpan.textContent = '';
+            if(unsubscribeSnapshot) unsubscribeSnapshot();
+            currentExerciseData = { cardio: false, physio: false, pushups: 0, rows: 0, squats: 0, bridges: 0 };
+            updateExerciseUI();
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+          }
+        });
+
+        loginBtn.addEventListener('click', async () => {
+            try {
+                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Logged in successfully!");
+            } catch (error) {
+                showFeedback(`Login failed: ${error.message}`, true);
+            }
+        });
+
+        signupBtn.addEventListener('click', async () => {
+            try {
+                await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Signed up successfully!");
+            } catch (error) {
+                showFeedback(`Signup failed: ${error.message}`, true);
+            }
+        });
+
+        logoutBtn.addEventListener('click', () => signOut(auth));
+
+        // Event listeners for exercise buttons
+        document.getElementById('cardio-btn').onclick = () => window.toggleExercise('cardio');
+        document.getElementById('physio-btn').onclick = () => window.toggleExercise('physio');
+        
+        ['pushups','rows','squats','bridges'].forEach(key => {
+            document.getElementById(`${key}-section`).onclick = () => window.modifyExercise(key, 1);
+        });
+
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+        showFeedback("Failed to initialize the application.", true);
+      }
     });
-    document.addEventListener('DOMContentLoaded', load);
   </script>
 </body>
 </html>
