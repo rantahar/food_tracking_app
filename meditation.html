@@ -63,10 +63,6 @@
       <h2 class="text-xl mb-2">🛏️ Slept by 22:00 (Last Night)</h2>
       <span id="bed-status" class="text-2xl font-bold"></span>
     </button>
-    <button id="med-btn" class="section-btn">
-      <h2 class="text-xl mb-2">🧘 Meditation</h2>
-      <span id="med-status" class="text-2xl font-bold"></span>
-    </button>
     <div id="snack-btn" class="section-btn">
       <h2 class="text-xl mb-2">🍵 Meditation Snacks</h2>
       <span id="snack-count" class="text-2xl font-bold"></span>
@@ -110,7 +106,7 @@
     let db, auth;
     let userId = null;
     let unsubscribeSnapshot = null;
-    let currentHabitData = { bed: false, meditation: false, snack: 0, mood: 0 };
+    let currentHabitData = { bed: false, snack: 0, mood: 0 };
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -137,10 +133,6 @@
         const bedBtn = document.getElementById('bed-btn');
         bedBtn.classList.toggle('btn-active', bed);
         document.getElementById('bed-status').textContent = bed ? 'Done' : 'Not done';
-
-        const medBtn = document.getElementById('med-btn');
-        medBtn.classList.toggle('btn-active', meditation);
-        document.getElementById('med-status').textContent = meditation ? 'Done' : 'Not done';
 
         document.getElementById('snack-count').textContent = snack;
         
@@ -252,7 +244,6 @@
 
         // Event listeners for habit buttons
         document.getElementById('bed-btn').onclick = () => window.toggleHabit('bed');
-        document.getElementById('med-btn').onclick = () => window.toggleHabit('meditation');
         document.getElementById('snack-btn').onclick = () => window.modifyHabit('snack', 1);
         document.getElementById('mood-buttons').addEventListener('click', e => {
             if (e.target.matches('.emoji-btn')) {

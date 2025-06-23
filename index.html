@@ -164,7 +164,15 @@
       const dateStr = getTodaysDateString();
       const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
       try {
-        await setDoc(docRef, { food: currentFoodData }, { merge: true });
+        // Calculate total calories before saving
+        const totalCalories = Math.round(Object.entries(currentFoodData).reduce((sum, [k, v]) => sum + v * caloriesPerPortion[k], 0));
+        
+        // Save portions and total calories
+        await setDoc(docRef, { 
+            food: currentFoodData,
+            totalCalories: totalCalories
+        }, { merge: true });
+
       } catch (error) {
         console.error("Error saving data: ", error);
         showFeedback("Error saving data.", true);

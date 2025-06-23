@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meditation Timer</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='white'/><path d='M50 25 A 25 25 0 0 1 75 50 L 75 75 L 25 75 L 25 50 A 25 25 0 0 1 50 25 Z' fill='%23348a7b'/><rect x='20' y='75' width='60' height='5' rx='2' fill='%23348a7b'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tone.js for sound synthesis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .btn-main, .btn-secondary, .btn-test { padding: .75rem 1.5rem; border-radius: .5rem; font-weight: bold; transition: all 0.2s; cursor: pointer; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-main:hover { background-color: #2a6e62; }
+    .btn-secondary { background-color: #eef2f1; border: 1px solid #d1d5db; color: #374151; }
+    .btn-secondary:hover { background-color: #e5e7eb; }
+    .btn-test { background: none; color: #6b7280; font-size: 0.9rem; padding: 0.5rem 1rem; }
+    .btn-test:hover { background-color: #e5e7eb; }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .hidden { display: none; }
+    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
+    input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+    }
+  </style>
+</head>
+<body class="text-gray-800">
+
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
+    <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Meditation Timer</h2>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
+  </div>
+
+  <!-- Main App Section -->
+  <div id="app-container" class="hidden">
+    <div class="absolute top-4 right-4 flex items-center">
+        <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
+        <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
+    </div>
+
+    <!-- Timer Setup View -->
+    <div id="setup-view" class="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 class="text-4xl font-bold mb-8">Meditation Timer</h1>
+      <div class="space-y-6 mb-8 text-center">
+        <div>
+            <label class="text-lg text-gray-600" for="time-input">Session Duration</label>
+            <div class="flex items-baseline justify-center gap-2">
+                <input type="number" id="time-input" class="text-5xl font-bold w-48 text-center bg-transparent focus:outline-none" value="15">
+                <span class="text-3xl font-semibold text-gray-500">minutes</span>
+            </div>
+        </div>
+        <div>
+            <label class="text-lg text-gray-600" for="interval-input">Interval Bell At</label>
+            <div class="flex items-baseline justify-center gap-2">
+                <input type="number" id="interval-input" class="text-5xl font-bold w-48 text-center bg-transparent focus:outline-none" value="30">
+                <span class="text-3xl font-semibold text-gray-500">minutes</span>
+            </div>
+        </div>
+      </div>
+      <button id="start-btn" class="btn-main text-2xl">Start</button>
+      <div class="mt-6 flex space-x-4">
+        <button id="test-main-bell" class="btn-test">Test Main Bell</button>
+        <button id="test-interval-bell" class="btn-test">Test Interval Bell</button>
+      </div>
+    </div>
+
+    <!-- Timer Active View -->
+    <div id="timer-view" class="hidden flex flex-col items-center justify-center min-h-screen">
+      <div id="timer-display" class="text-8xl font-mono font-bold">00:00</div>
+       <div id="interval-message" class="text-2xl mt-4 text-green-700 font-semibold opacity-0 transition-opacity">Interval</div>
+    </div>
+
+    <!-- Evaluation View -->
+    <div id="evaluation-view" class="hidden container mx-auto max-w-lg p-8">
+        <h2 class="text-3xl font-bold text-center mb-8">Session Review</h2>
+        <div class="space-y-6">
+            <div>
+                <label for="concentration-slider" class="block text-lg font-medium mb-2">Concentration: <span id="concentration-value">3</span></label>
+                <input id="concentration-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="clarity-slider" class="block text-lg font-medium mb-2">Clarity: <span id="clarity-value">3</span></label>
+                <input id="clarity-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="equanimity-slider" class="block text-lg font-medium mb-2">Equanimity: <span id="equanimity-value">3</span></label>
+                <input id="equanimity-slider" type="range" min="1" max="5" value="3" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+            </div>
+            <div>
+                <label for="midl-marker-input" class="block text-lg font-medium mb-2 text-center">MIDL Marker</label>
+                <input id="midl-marker-input" type="number" min="0" max="12" value="0" class="w-full text-center text-2xl font-bold bg-transparent border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-600">
+            </div>
+        </div>
+        <div class="text-center mt-10">
+            <button id="save-session-btn" class="btn-main text-xl">Save Session</button>
+        </div>
+    </div>
+  </div>
+
+  <div id="feedback-toast" class="feedback"></div>
+
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
+
+    // --- Application State and Constants ---
+    let db, auth, userId = null;
+    let timerIntervalId = null;
+    let bellSynth; // Updated synthesizer variable
+
+    // --- DOM Elements ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const toast = document.getElementById('feedback-toast');
+    
+    const setupView = document.getElementById('setup-view');
+    const timerView = document.getElementById('timer-view');
+    const evaluationView = document.getElementById('evaluation-view');
+    const timeInput = document.getElementById('time-input');
+    const intervalInput = document.getElementById('interval-input');
+    const startBtn = document.getElementById('start-btn');
+    const timerDisplay = document.getElementById('timer-display');
+    const intervalMessage = document.getElementById('interval-message');
+
+    // --- UI Update & Utility ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    };
+
+    const switchView = (viewToShow) => {
+        [setupView, timerView, evaluationView].forEach(v => v.classList.add('hidden'));
+        viewToShow.classList.remove('hidden');
+    };
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+        const secs = (seconds % 60).toString().padStart(2, '0');
+        return `${mins}:${secs}`;
+    };
+
+    // --- Sound Synthesis (Improved) ---
+    const setupAudio = () => {
+        if (!bellSynth) {
+            bellSynth = new Tone.FMSynth({
+                harmonicity: 1.414,
+                modulationIndex: 10,
+                envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 4 },
+                modulationEnvelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.8 }
+            });
+
+            // Tremolo effect for shimmering decay
+            const tremolo = new Tone.Tremolo({
+                frequency: 4,   // Speed of the volume fluctuation
+                depth: 0.3      // Intensity of the fluctuation
+            }).toDestination().start();
+
+            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).connect(tremolo);
+            bellSynth.connect(reverb);
+        }
+    };
+
+    const playBell = (note, duration) => {
+        if (Tone.context.state !== 'running') {
+            Tone.start();
+        }
+        if (!bellSynth) setupAudio();
+        bellSynth.triggerAttackRelease(note, duration);
+    };
+
+    // --- Timer Logic ---
+    const startTimer = () => {
+        const totalMinutes = parseInt(timeInput.value, 10);
+        const intervalMinutes = parseInt(intervalInput.value, 10);
+
+        if (isNaN(totalMinutes) || totalMinutes <= 0) {
+            showFeedback("Please enter a valid session duration.", true);
+            return;
+        }
+
+        let totalSeconds = totalMinutes * 60;
+        let intervalPlayed = false;
+        
+        switchView(timerView);
+        timerDisplay.textContent = formatTime(totalSeconds);
+
+        timerIntervalId = setInterval(() => {
+            totalSeconds--;
+            timerDisplay.textContent = formatTime(totalSeconds);
+
+            // Interval bell logic
+            if (!intervalPlayed && intervalMinutes > 0 && totalMinutes > intervalMinutes && totalSeconds === (totalMinutes - intervalMinutes) * 60) {
+                playBell('G5', '1n'); // Different note for interval
+                intervalMessage.style.opacity = 1;
+                setTimeout(() => intervalMessage.style.opacity = 0, 3000);
+                intervalPlayed = true;
+            }
+
+            if (totalSeconds <= 0) {
+                clearInterval(timerIntervalId);
+                playBell('C5', '2n'); // End bell
+                switchView(evaluationView);
+            }
+        }, 1000);
+    };
+
+    // --- Data Saving ---
+    const saveSession = async () => {
+        if (!userId) {
+            showFeedback("You must be logged in to save.", true);
+            return;
+        }
+        const sessionData = {
+            userId: userId,
+            timestamp: new Date(),
+            durationMinutes: parseInt(timeInput.value, 10),
+            intervalMinutes: parseInt(intervalInput.value, 10),
+            concentration: parseInt(document.getElementById('concentration-slider').value),
+            clarity: parseInt(document.getElementById('clarity-slider').value),
+            equanimity: parseInt(document.getElementById('equanimity-slider').value),
+            midlMarker: parseInt(document.getElementById('midl-marker-input').value, 10)
+        };
+
+        try {
+            await addDoc(collection(db, "meditation_sessions"), sessionData);
+            showFeedback("Session saved successfully!");
+            switchView(setupView);
+        } catch (error) {
+            console.error("Error saving session: ", error);
+            showFeedback("Failed to save session.", true);
+        }
+    };
+
+    // --- Initialization & Auth Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+        try {
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    userEmailSpan.textContent = user.email;
+                    authContainer.classList.add('hidden');
+                    appContainer.classList.remove('hidden');
+                    switchView(setupView);
+                } else {
+                    userId = null;
+                    userEmailSpan.textContent = '';
+                    authContainer.classList.remove('hidden');
+                    appContainer.classList.add('hidden');
+                }
+            });
+
+            // Auth buttons
+            loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
+            signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
+            logoutBtn.addEventListener('click', () => signOut(auth));
+
+            // App buttons
+            startBtn.addEventListener('click', startTimer);
+            document.getElementById('save-session-btn').addEventListener('click', saveSession);
+            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C5', '2n'));
+            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G5', '2n'));
+
+            // Slider value displays
+            ['concentration', 'clarity', 'equanimity'].forEach(id => {
+                const slider = document.getElementById(`${id}-slider`);
+                const valueSpan = document.getElementById(`${id}-value`);
+                slider.addEventListener('input', () => valueSpan.textContent = slider.value);
+            });
+
+        } catch (error) {
+            console.error("Firebase initialization failed:", error);
+            showFeedback("Failed to initialize the application.", true);
+        }
+    });
+  </script>
+</body>
+</html>
