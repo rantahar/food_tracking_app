@@ -261,6 +261,7 @@
                 'weight': data.weight,
                 'habits.bed': data.habits?.bed ? 1 : 0,
                 'habits.mood': data.habits?.mood,
+                'habits.snack': data.habits?.snack,
                 'exercise.cardio': data.exercise?.cardio ? 1 : 0,
                 'exercise.physio': data.exercise?.physio ? 1 : 0,
                 'exercise.pushups': data.exercise?.pushups,
@@ -296,7 +297,7 @@
         if (allData.length > 0) {
             const variables = {
                 'General': [{key:'totalCalories', label:'Calories'}, {key:'weight', label:'Weight'}],
-                'Habits': [{key:'habits.bed', label:'Slept by 22:00'}, {key:'habits.mood', label:'Mood'}],
+                'Habits': [{key:'habits.bed', label:'Slept by 22:00'}, {key:'habits.mood', label:'Mood'}, {key:'habits.snack', label:'Meditation Snacks'}],
                 'Exercise': [
                     {key:'exercise.cardio', label:'Cardio'}, {key:'exercise.physio', label:'Physio'},
                     {key:'exercise.pushups', label:'Pushups'}, {key:'exercise.rows', label:'Rows'},
