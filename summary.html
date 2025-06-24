@@ -8,8 +8,10 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js library for plotting -->
+  <!-- Chart.js for plotting -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- simple-statistics for correlation calculation -->
+  <script src="https://unpkg.com/simple-statistics@7.8.3/dist/simple-statistics.min.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
     .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; }
@@ -51,18 +53,23 @@
 
     <div id="loading-message" class="text-center">Loading data...</div>
     
-    <div id="charts-container" class="hidden">
-      <div class="chart-container">
-        <h2 class="text-xl font-bold mb-4 text-center">Calorie Intake Over Time</h2>
-        <canvas id="calories-chart"></canvas>
+    <div id="charts-container" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="chart-container md:col-span-2">
+        <div class="flex justify-center items-center gap-4 mb-4">
+            <h2 class="text-xl font-bold">Time Series:</h2>
+            <select id="time-series-select" class="p-2 border rounded"></select>
+        </div>
+        <canvas id="time-series-chart"></canvas>
       </div>
-      <div class="chart-container">
-        <h2 class="text-xl font-bold mb-4 text-center">Mood Over Time</h2>
-        <canvas id="mood-chart"></canvas>
-      </div>
-       <div class="chart-container">
-        <h2 class="text-xl font-bold mb-4 text-center">Habit Frequency</h2>
-        <canvas id="habits-chart"></canvas>
+      <div class="chart-container md:col-span-2">
+        <h2 class="text-xl font-bold mb-4 text-center">Correlation Analysis</h2>
+        <div class="flex justify-center items-center gap-4 mb-4">
+            <select id="x-variable-select" class="p-2 border rounded"></select>
+            <span class="font-bold">vs.</span>
+            <select id="y-variable-select" class="p-2 border rounded"></select>
+        </div>
+        <canvas id="correlation-chart"></canvas>
+        <div id="correlation-result" class="text-center mt-4 font-semibold text-lg"></div>
       </div>
     </div>
     
@@ -93,8 +100,9 @@
     // --- Application State ---
     let db, auth;
     let userId = null;
-    let charts = {}; // To hold chart instances
-    let allData = []; // To hold all fetched data for export
+    let charts = {};
+    let allData = [];
+    let processedDataForCorrelation = {};
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -109,6 +117,11 @@
     const loadingMessage = document.getElementById('loading-message');
     const chartsContainer = document.getElementById('charts-container');
     const exportBtn = document.getElementById('export-csv-btn');
+    const xSelect = document.getElementById('x-variable-select');
+    const ySelect = document.getElementById('y-variable-select');
+    const timeSeriesSelect = document.getElementById('time-series-select');
+    const correlationResult = document.getElementById('correlation-result');
+
 
     // --- UI & Utility Functions ---
     const showFeedback = (message, isError = false) => {
@@ -118,79 +131,107 @@
         setTimeout(() => { toast.classList.remove('show'); }, 3000);
     };
 
-    const caloriesPerPortion = { protein: 145, veggies: 25, carbs: 120, fat: 100 };
-    const calculateCalories = (foodData) => {
-        if (!foodData) return 0;
-        return Object.entries(foodData).reduce((sum, [k, v]) => sum + v * (caloriesPerPortion[k] || 0), 0);
-    };
-
     // --- Chart Rendering ---
-    const renderCharts = (data) => {
-        const labels = data.map(d => d.date);
+    const renderTimeSeriesChart = () => {
+        if (allData.length === 0) return;
 
-        // Destroy old charts if they exist
-        Object.values(charts).forEach(chart => chart.destroy());
+        const selectedKey = timeSeriesSelect.value;
+        const selectedOption = timeSeriesSelect.options[timeSeriesSelect.selectedIndex];
+        const selectedLabel = selectedOption.text;
+        const selectedColor = selectedOption.dataset.color || '#348a7b';
+        
+        const labels = allData.map(d => d.date);
+        const chartData = allData.map(d => d[selectedKey] || null);
 
-        // Calories Chart
-        const caloriesData = data.map(d => calculateCalories(d.food));
-        const caloriesCtx = document.getElementById('calories-chart').getContext('2d');
-        charts.calories = new Chart(caloriesCtx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Total Calories',
-                    data: caloriesData,
-                    borderColor: '#348a7b',
-                    backgroundColor: 'rgba(52, 138, 123, 0.1)',
-                    tension: 0.1,
+        if(charts.timeSeries) charts.timeSeries.destroy();
+        charts.timeSeries = new Chart(document.getElementById('time-series-chart').getContext('2d'), {
+            type: 'line', 
+            data: { 
+                labels, 
+                datasets: [{ 
+                    label: selectedLabel, 
+                    data: chartData, 
+                    borderColor: selectedColor, 
+                    backgroundColor: `${selectedColor}1a`, // Add alpha for fill
+                    tension: 0.1, 
                     fill: true,
-                }]
+                    spanGaps: true,
+                }] 
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
             }
         });
-
-        // Mood Chart
-        const moodData = data.map(d => d.habits?.mood || null); // Use null for missing data
-        const moodCtx = document.getElementById('mood-chart').getContext('2d');
-        charts.mood = new Chart(moodCtx, {
-            type: 'line',
-            data: {
-                labels,
-                datasets: [{
-                    label: 'Mood (1-5)',
-                    data: moodData,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    spanGaps: true, // Connect lines over null data points
-                    tension: 0.1,
-                }]
-            },
-             options: { scales: { y: { beginAtZero: true, max: 5 } } }
+    };
+    
+    const populateDropdowns = (variables) => {
+        // Time series dropdown
+        timeSeriesSelect.innerHTML = '';
+        const timeSeriesVars = [
+            {key:'totalCalories', label:'Calories', color: '#348a7b'}, 
+            {key:'weight', label:'Weight', color: '#3b82f6'}
+        ];
+        timeSeriesVars.forEach(v => {
+            const option = new Option(v.label, v.key);
+            option.dataset.color = v.color;
+            timeSeriesSelect.appendChild(option);
         });
 
-        // Habits Chart
-        const habitCounts = {
-            bed: data.filter(d => d.habits?.bed).length,
-            meditation: data.filter(d => d.habits?.meditation).length,
-            cardio: data.filter(d => d.exercise?.cardio).length,
-            physio: data.filter(d => d.exercise?.physio).length,
-        };
-        const habitsCtx = document.getElementById('habits-chart').getContext('2d');
-        charts.habits = new Chart(habitsCtx, {
-            type: 'bar',
-            data: {
-                labels: Object.keys(habitCounts),
-                datasets: [{
-                    label: 'Total Days Completed',
-                    data: Object.values(habitCounts),
-                    backgroundColor: ['#6366f1', '#ec4899', '#10b981', '#8b5cf6'],
-                }]
-            },
-            options: { scales: { y: { beginAtZero: true } } }
+        // Correlation dropdowns
+        xSelect.innerHTML = '';
+        ySelect.innerHTML = '';
+        Object.entries(variables).forEach(([groupName, vars]) => {
+            const xOptGroup = document.createElement('optgroup');
+            xOptGroup.label = groupName;
+            const yOptGroup = document.createElement('optgroup');
+            yOptGroup.label = groupName;
+            vars.forEach(v => {
+                const xOption = new Option(v.label, v.key);
+                const yOption = new Option(v.label, v.key);
+                xOptGroup.appendChild(xOption);
+                yOptGroup.appendChild(yOption);
+            });
+            xSelect.appendChild(xOptGroup);
+            ySelect.appendChild(yOptGroup);
         });
+        ySelect.selectedIndex = 1; // Default to different variables
+    };
+
+    const renderCorrelationPlot = () => {
+        const xVarKey = xSelect.value;
+        const yVarKey = ySelect.value;
         
-        loadingMessage.classList.add('hidden');
-        chartsContainer.classList.remove('hidden');
+        const points = [];
+        for(const date in processedDataForCorrelation) {
+            if(processedDataForCorrelation[date][xVarKey] != null && processedDataForCorrelation[date][yVarKey] != null) {
+                points.push({
+                    x: processedDataForCorrelation[date][xVarKey],
+                    y: processedDataForCorrelation[date][yVarKey]
+                });
+            }
+        }
+        
+        if (points.length < 2) {
+            correlationResult.textContent = "Not enough data to calculate correlation.";
+            if(charts.correlation) charts.correlation.destroy();
+            return;
+        }
+
+        const xData = points.map(p => p.x);
+        const yData = points.map(p => p.y);
+        const correlation = window.ss.sampleCorrelation(xData, yData).toFixed(3);
+        correlationResult.textContent = `Correlation (r): ${correlation}`;
+
+        if(charts.correlation) charts.correlation.destroy();
+        charts.correlation = new Chart(document.getElementById('correlation-chart').getContext('2d'), {
+            type: 'scatter',
+            data: { datasets: [{ label: `${xSelect.options[xSelect.selectedIndex].text} vs ${ySelect.options[ySelect.selectedIndex].text}`, data: points, backgroundColor: 'rgba(217, 119, 6, 0.6)' }] },
+            options: { scales: { x: { title: { display: true, text: xSelect.options[xSelect.selectedIndex].text }}, y: { title: { display: true, text: ySelect.options[ySelect.selectedIndex].text }}}}
+        });
     };
 
     // --- Data Fetching and Processing ---
@@ -199,16 +240,71 @@
         loadingMessage.classList.remove('hidden');
         chartsContainer.classList.add('hidden');
 
-        const logsRef = collection(db, 'users', userId, 'daily_logs');
-        const querySnapshot = await getDocs(logsRef);
+        const dailyLogsPromise = getDocs(collection(db, 'users', userId, 'daily_logs'));
+        const medSessionsPromise = getDocs(collection(db, 'users', userId, 'meditation_sessions'));
+        const [dailyLogsSnapshot, medSessionsSnapshot] = await Promise.all([dailyLogsPromise, medSessionsPromise]);
         
-        allData = querySnapshot.docs.map(doc => ({
-            date: doc.id,
-            ...doc.data()
-        })).sort((a, b) => a.date.localeCompare(b.date)); // Sort by date
+        processedDataForCorrelation = {};
+        dailyLogsSnapshot.forEach(doc => {
+            const date = doc.id;
+            const data = doc.data();
+            processedDataForCorrelation[date] = {
+                'totalCalories': data.totalCalories,
+                'weight': data.weight,
+                'habits.bed': data.habits?.bed ? 1 : 0,
+                'habits.mood': data.habits?.mood,
+                'exercise.cardio': data.exercise?.cardio ? 1 : 0,
+                'exercise.physio': data.exercise?.physio ? 1 : 0,
+                'exercise.pushups': data.exercise?.pushups,
+                'exercise.rows': data.exercise?.rows,
+                'exercise.squats': data.exercise?.squats,
+                'exercise.bridges': data.exercise?.bridges,
+            };
+        });
+
+        const medSessionsByDate = {};
+        medSessionsSnapshot.forEach(doc => {
+            const data = doc.data();
+            const date = data.timestamp.toDate().toISOString().split('T')[0];
+            if (!medSessionsByDate[date]) medSessionsByDate[date] = { duration: [], conc: [], clar: [], equa: [], midl: [] };
+            medSessionsByDate[date].duration.push(data.durationMinutes);
+            medSessionsByDate[date].conc.push(data.concentration);
+            medSessionsByDate[date].clar.push(data.clarity);
+            medSessionsByDate[date].equa.push(data.equanimity);
+            medSessionsByDate[date].midl.push(data.midlMarker);
+        });
+
+        for(const date in medSessionsByDate) {
+            if (!processedDataForCorrelation[date]) processedDataForCorrelation[date] = {};
+            processedDataForCorrelation[date]['meditation.duration'] = window.ss.sum(medSessionsByDate[date].duration);
+            processedDataForCorrelation[date]['meditation.concentration'] = window.ss.mean(medSessionsByDate[date].conc.filter(v => v!=null));
+            processedDataForCorrelation[date]['meditation.clarity'] = window.ss.mean(medSessionsByDate[date].clar.filter(v => v!=null));
+            processedDataForCorrelation[date]['meditation.equanimity'] = window.ss.mean(medSessionsByDate[date].equa.filter(v => v!=null));
+            processedDataForCorrelation[date]['meditation.midlMarker'] = window.ss.mean(medSessionsByDate[date].midl.filter(v => v!=null));
+        }
+        
+        allData = Object.keys(processedDataForCorrelation).map(date => ({ date, ...processedDataForCorrelation[date] })).sort((a,b) => a.date.localeCompare(b.date));
 
         if (allData.length > 0) {
-            renderCharts(allData);
+            const variables = {
+                'General': [{key:'totalCalories', label:'Calories'}, {key:'weight', label:'Weight'}],
+                'Habits': [{key:'habits.bed', label:'Slept by 22:00'}, {key:'habits.mood', label:'Mood'}],
+                'Exercise': [
+                    {key:'exercise.cardio', label:'Cardio'}, {key:'exercise.physio', label:'Physio'},
+                    {key:'exercise.pushups', label:'Pushups'}, {key:'exercise.rows', label:'Rows'},
+                    {key:'exercise.squats', label:'Squats'}, {key:'exercise.bridges', label:'Bridges'}
+                ],
+                'Meditation': [
+                    {key:'meditation.duration', label:'Meditation Duration'}, {key:'meditation.concentration', label:'Concentration'},
+                    {key:'meditation.clarity', label:'Clarity'}, {key:'meditation.equanimity', label:'Equanimity'},
+                    {key:'meditation.midlMarker', label:'MIDL Marker'}
+                ]
+            };
+            populateDropdowns(variables);
+            renderTimeSeriesChart();
+            renderCorrelationPlot();
+            loadingMessage.classList.add('hidden');
+            chartsContainer.classList.remove('hidden');
         } else {
             loadingMessage.textContent = "No data found to display.";
         }
@@ -216,28 +312,14 @@
     
     // --- CSV Export ---
     const exportToCsv = () => {
-        if (allData.length === 0) {
-            showFeedback("No data to export.", true);
-            return;
-        }
-        
-        let csvContent = "data:text/csv;charset=utf-8,";
-        const headers = ["date", "category", "measurement", "value"];
-        csvContent += headers.join(",") + "\r\n";
-
-        allData.forEach(log => {
-            const date = log.date;
-            // Flatten food data
-            if(log.food) Object.entries(log.food).forEach(([key, value]) => csvContent += `${date},food,${key},${value}\r\n`);
-            // Flatten habits data
-            if(log.habits) Object.entries(log.habits).forEach(([key, value]) => csvContent += `${date},habits,${key},${value}\r\n`);
-            // Flatten exercise data
-            if(log.exercise) Object.entries(log.exercise).forEach(([key, value]) => csvContent += `${date},exercise,${key},${value}\r\n`);
+        if (allData.length === 0) { showFeedback("No data to export.", true); return; }
+        let csvContent = "data:text/csv;charset=utf-8,date," + Object.keys(allData[0]).filter(k => k!=='date').join(',') + '\r\n';
+        allData.forEach(row => {
+            const values = Object.keys(allData[0]).filter(k => k !== 'date').map(key => row[key] || '');
+            csvContent += `${row.date},${values.join(',')}\r\n`;
         });
-
-        const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
+        link.setAttribute("href", encodeURI(csvContent));
         link.setAttribute("download", "tracker_export.csv");
         document.body.appendChild(link);
         link.click();
@@ -272,6 +354,9 @@
         signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
         logoutBtn.addEventListener('click', () => signOut(auth));
         exportBtn.addEventListener('click', exportToCsv);
+        xSelect.addEventListener('change', renderCorrelationPlot);
+        ySelect.addEventListener('change', renderCorrelationPlot);
+        timeSeriesSelect.addEventListener('change', renderTimeSeriesChart);
 
       } catch (error) {
         console.error("Firebase initialization failed:", error);
