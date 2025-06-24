@@ -169,35 +169,43 @@
     };
     
     const populateDropdowns = (variables) => {
-        // Time series dropdown
+        // Clear existing options
         timeSeriesSelect.innerHTML = '';
-        const timeSeriesVars = [
-            {key:'totalCalories', label:'Calories', color: '#348a7b'}, 
-            {key:'weight', label:'Weight', color: '#3b82f6'}
-        ];
-        timeSeriesVars.forEach(v => {
-            const option = new Option(v.label, v.key);
-            option.dataset.color = v.color;
-            timeSeriesSelect.appendChild(option);
-        });
-
-        // Correlation dropdowns
         xSelect.innerHTML = '';
         ySelect.innerHTML = '';
+
+        const colors = ['#348a7b', '#3b82f6', '#ca8a04', '#a855f7', '#db2777', '#059669', '#7c3aed', '#c026d3'];
+        let colorIndex = 0;
+
+        // Populate all dropdowns from the single `variables` source of truth
         Object.entries(variables).forEach(([groupName, vars]) => {
             const xOptGroup = document.createElement('optgroup');
             xOptGroup.label = groupName;
             const yOptGroup = document.createElement('optgroup');
             yOptGroup.label = groupName;
+            const tsOptGroup = document.createElement('optgroup');
+            tsOptGroup.label = groupName;
+
             vars.forEach(v => {
-                const xOption = new Option(v.label, v.key);
-                const yOption = new Option(v.label, v.key);
-                xOptGroup.appendChild(xOption);
-                yOptGroup.appendChild(yOption);
+                const option = new Option(v.label, v.key);
+                
+                // Time Series Option
+                const tsOption = option.cloneNode(true);
+                tsOption.dataset.color = colors[colorIndex % colors.length];
+                tsOptGroup.appendChild(tsOption);
+
+                // Correlation Options
+                xOptGroup.appendChild(option.cloneNode(true));
+                yOptGroup.appendChild(option.cloneNode(true));
+
+                colorIndex++;
             });
+
+            timeSeriesSelect.appendChild(tsOptGroup);
             xSelect.appendChild(xOptGroup);
             ySelect.appendChild(yOptGroup);
         });
+        
         ySelect.selectedIndex = 1; // Default to different variables
     };
 

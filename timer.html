@@ -13,24 +13,22 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
-    .btn-main, .btn-secondary, .btn-test { padding: .75rem 1.5rem; border-radius: .5rem; font-weight: bold; transition: all 0.2s; cursor: pointer; }
+    .btn-main, .btn-secondary, .btn-test, .btn-stop { padding: .75rem 1.5rem; border-radius: .5rem; font-weight: bold; transition: all 0.2s; cursor: pointer; }
     .btn-main { background-color: #348a7b; color: #fff; }
     .btn-main:hover { background-color: #2a6e62; }
     .btn-secondary { background-color: #eef2f1; border: 1px solid #d1d5db; color: #374151; }
     .btn-secondary:hover { background-color: #e5e7eb; }
     .btn-test { background: none; color: #6b7280; font-size: 0.9rem; padding: 0.5rem 1rem; }
     .btn-test:hover { background-color: #e5e7eb; }
+    .btn-stop { background-color: #c2410c; color: white; } /* Changed from red to earthy orange */
+    .btn-stop:hover { background-color: #9a3412; }
     .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
     .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .hidden { display: none; }
-    input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 8px; background: #e5e7eb; border-radius: 4px; outline: none; }
     input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
     input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
     input[type=number]::-webkit-inner-spin-button, 
-    input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
-    }
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   </style>
 </head>
 <body class="text-gray-800">
@@ -60,9 +58,9 @@
       <h1 class="text-4xl font-bold mb-8">Meditation Timer</h1>
       <div class="space-y-6 mb-8 text-center">
         <div>
-            <label class="text-lg text-gray-600" for="time-input">Session Duration</label>
+            <label class="text-lg text-gray-600" for="chime-time-input">Main Chime At</label>
             <div class="flex items-baseline justify-center gap-2">
-                <input type="number" id="time-input" class="text-5xl font-bold w-48 text-center bg-transparent focus:outline-none" value="15">
+                <input type="number" id="chime-time-input" class="text-5xl font-bold w-48 text-center bg-transparent focus:outline-none" value="45">
                 <span class="text-3xl font-semibold text-gray-500">minutes</span>
             </div>
         </div>
@@ -84,12 +82,14 @@
     <!-- Timer Active View -->
     <div id="timer-view" class="hidden flex flex-col items-center justify-center min-h-screen">
       <div id="timer-display" class="text-8xl font-mono font-bold">00:00</div>
-       <div id="interval-message" class="text-2xl mt-4 text-green-700 font-semibold opacity-0 transition-opacity">Interval</div>
+      <div id="chime-message" class="text-2xl mt-4 text-green-700 font-semibold opacity-0 transition-opacity">Chime</div>
+      <button id="stop-btn" class="btn-stop text-2xl mt-8">Stop & Review</button>
     </div>
 
     <!-- Evaluation View -->
     <div id="evaluation-view" class="hidden container mx-auto max-w-lg p-8">
-        <h2 class="text-3xl font-bold text-center mb-8">Session Review</h2>
+        <h2 class="text-3xl font-bold text-center mb-2">Session Review</h2>
+        <p class="text-center text-gray-600 mb-8">Duration: <span id="final-duration"></span></p>
         <div class="space-y-6">
             <div>
                 <label for="concentration-slider" class="block text-lg font-medium mb-2">Concentration: <span id="concentration-value">-</span></label>
@@ -138,6 +138,9 @@
     let timerIntervalId = null;
     let bellSynth; 
     let sliderInteracted = { concentration: false, clarity: false, equanimity: false };
+    let sessionStartTime = 0;
+    let finalSessionDuration = 0;
+    let wakeLock = null;
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -153,11 +156,13 @@
     const setupView = document.getElementById('setup-view');
     const timerView = document.getElementById('timer-view');
     const evaluationView = document.getElementById('evaluation-view');
-    const timeInput = document.getElementById('time-input');
+    const chimeTimeInput = document.getElementById('chime-time-input');
     const intervalInput = document.getElementById('interval-input');
     const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
     const timerDisplay = document.getElementById('timer-display');
-    const intervalMessage = document.getElementById('interval-message');
+    const chimeMessage = document.getElementById('chime-message');
+    const finalDurationSpan = document.getElementById('final-duration');
 
     // --- UI Update & Utility ---
     const showFeedback = (message, isError = false) => {
@@ -178,23 +183,36 @@
         return `${mins}:${secs}`;
     };
 
+    // --- Screen Wake Lock ---
+    const requestWakeLock = async () => {
+        if ('wakeLock' in navigator) {
+            try {
+                wakeLock = await navigator.wakeLock.request('screen');
+                wakeLock.addEventListener('release', () => console.log('Screen Wake Lock released.'));
+                console.log('Screen Wake Lock is active.');
+            } catch (err) {
+                console.error(`${err.name}, ${err.message}`);
+            }
+        }
+    };
+    
+    const releaseWakeLock = () => {
+        if (wakeLock !== null) {
+            wakeLock.release();
+            wakeLock = null;
+        }
+    };
+
     // --- Sound Synthesis ---
     const setupAudio = () => {
         if (!bellSynth) {
             bellSynth = new Tone.FMSynth({
                 harmonicity: 1.414,
                 modulationIndex: 10,
-                envelope: { attack: 0.01, decay: 0.4, sustain: 0.1, release: 4 },
+                envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 4 },
                 modulationEnvelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.8 }
             });
-
-            // Tremolo effect for shimmering decay
-            const tremolo = new Tone.Tremolo({
-                frequency: 4,   // Speed of the volume fluctuation
-                depth: 0.3      // Intensity of the fluctuation
-            }).toDestination().start();
-
-            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).connect(tremolo);
+            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).toDestination();
             bellSynth.connect(reverb);
         }
     };
@@ -215,46 +233,51 @@
 
     // --- Timer Logic ---
     const startTimer = () => {
-        const totalMinutes = parseInt(timeInput.value, 10);
-        const intervalMinutes = parseInt(intervalInput.value, 10);
+        requestWakeLock();
+        let elapsedSeconds = 0;
+        let mainChimePlayed = false;
+        let intervalChimePlayed = false;
+        const mainChimeTime = parseInt(chimeTimeInput.value, 10) * 60;
+        const intervalTime = parseInt(intervalInput.value, 10) * 60;
 
-        if (isNaN(totalMinutes) || totalMinutes <= 0) {
-            showFeedback("Please enter a valid session duration.", true);
-            return;
-        }
-
-        let totalSeconds = totalMinutes * 60;
-        let intervalPlayed = false;
-        
         switchView(timerView);
-        timerDisplay.textContent = formatTime(totalSeconds);
+        timerDisplay.textContent = formatTime(elapsedSeconds);
+        sessionStartTime = Date.now();
 
         timerIntervalId = setInterval(() => {
-            totalSeconds--;
-            timerDisplay.textContent = formatTime(totalSeconds);
+            elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+            timerDisplay.textContent = formatTime(elapsedSeconds);
 
-            if (!intervalPlayed && intervalMinutes > 0 && totalMinutes > intervalMinutes && totalSeconds === (totalMinutes - intervalMinutes) * 60) {
+            if (!intervalChimePlayed && intervalTime > 0 && elapsedSeconds >= intervalTime) {
                 playBell('G4', '1n');
-                intervalMessage.style.opacity = 1;
-                setTimeout(() => intervalMessage.style.opacity = 0, 3000);
-                intervalPlayed = true;
+                chimeMessage.textContent = 'Interval';
+                chimeMessage.style.opacity = 1;
+                setTimeout(() => chimeMessage.style.opacity = 0, 3000);
+                intervalChimePlayed = true;
             }
 
-            if (totalSeconds <= 0) {
-                clearInterval(timerIntervalId);
+            if (!mainChimePlayed && mainChimeTime > 0 && elapsedSeconds >= mainChimeTime) {
                 playBell('C4', '2n');
-                resetEvaluationForm();
-                switchView(evaluationView);
+                chimeMessage.textContent = 'Chime';
+                chimeMessage.style.opacity = 1;
+                setTimeout(() => chimeMessage.style.opacity = 0, 3000);
+                mainChimePlayed = true;
             }
         }, 1000);
     };
 
+    const stopTimer = () => {
+        clearInterval(timerIntervalId);
+        releaseWakeLock();
+        finalSessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
+        finalDurationSpan.textContent = formatTime(finalSessionDuration);
+        resetEvaluationForm();
+        switchView(evaluationView);
+    };
+
     // --- Data Saving ---
     const saveSession = async () => {
-        if (!userId) {
-            showFeedback("You must be logged in to save.", true);
-            return;
-        }
+        if (!userId) { showFeedback("You must be logged in to save.", true); return; }
 
         const concentrationSlider = document.getElementById('concentration-slider');
         const claritySlider = document.getElementById('clarity-slider');
@@ -264,7 +287,8 @@
         const sessionData = {
             userId: userId,
             timestamp: new Date(),
-            durationMinutes: parseInt(timeInput.value, 10),
+            durationSeconds: finalSessionDuration,
+            targetChimeMinutes: parseInt(chimeTimeInput.value, 10),
             intervalMinutes: parseInt(intervalInput.value, 10),
             concentration: sliderInteracted.concentration ? parseInt(concentrationSlider.value) : null,
             clarity: sliderInteracted.clarity ? parseInt(claritySlider.value) : null,
@@ -304,18 +328,16 @@
                 }
             });
 
-            // Auth buttons
             loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
             signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
             logoutBtn.addEventListener('click', () => signOut(auth));
 
-            // App buttons
             startBtn.addEventListener('click', startTimer);
+            stopBtn.addEventListener('click', stopTimer);
             document.getElementById('save-session-btn').addEventListener('click', saveSession);
             document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '2n'));
             document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '1n'));
 
-            // Slider value displays and interaction tracking
             ['concentration', 'clarity', 'equanimity'].forEach(id => {
                 const slider = document.getElementById(`${id}-slider`);
                 const valueSpan = document.getElementById(`${id}-value`);
