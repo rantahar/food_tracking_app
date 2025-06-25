@@ -212,8 +212,11 @@
                 envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 4 },
                 modulationEnvelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.8 }
             });
-            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 }).toDestination();
-            bellSynth.connect(reverb);
+            const volume = new Tone.Volume(6); // Increase volume by 6dB
+            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 });
+            
+            // Chain: synth -> reverb -> volume -> destination
+            bellSynth.chain(reverb, volume, Tone.Destination);
         }
     };
 
