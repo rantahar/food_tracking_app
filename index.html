@@ -27,6 +27,7 @@
     .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     #auth-container, #app-container { transition: opacity 0.5s ease-in-out; }
     .hidden { display: none; }
+    input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   </style>
 </head>
 <body class="text-gray-800">
@@ -55,44 +56,27 @@
     </header>
     
     <div id="calorie-display">
-      <div>Estimated Calories</div>
+      <div>Total Calories</div>
       <div class="cal-text"><span id="cal-current">0</span> / <span id="cal-target">0</span> kcal</div>
     </div>
 
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="card">
-        <h2 class="text-xl font-semibold mb-2">🍗 Protein</h2>
-        <div class="text-2xl font-bold mb-2"><span id="protein-current">0</span> / 4 Palms</div>
-        <progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="4"></progress>
-        <div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('protein',1)" class="btn-control">+1</button><button onclick="window.addPortion('protein',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('protein',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('protein',-1)" class="btn-control">-1</button></div>
-      </div>
-      <div class="card">
-        <h2 class="text-xl font-semibold mb-2">🥗 Veggies</h2>
-        <div class="text-2xl font-bold mb-2"><span id="veggies-current">0</span> / 5 Fists</div>
-        <progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="5"></progress>
-        <div class="grid grid-cols-2 gap-2 mt-auto"><button onclick="window.addPortion('veggies',1)" class="btn-control">+1</button><button onclick="window.addPortion('veggies',-1)" class="btn-control">-1</button></div>
-      </div>
-      <div class="card">
-        <h2 class="text-xl font-semibold mb-2">🍞 Carbs</h2>
-        <div class="text-2xl font-bold mb-2"><span id="carbs-current">0</span> / 8 Cupped</div>
-        <progress id="carbs-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="8"></progress>
-        <div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('carbs',1)" class="btn-control">+1</button><button onclick="window.addPortion('carbs',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('carbs',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('carbs',-1)" class="btn-control">-1</button></div>
-      </div>
-      <div class="card">
-        <h2 class="text-xl font-semibold mb-2">🥑 Fat</h2>
-        <div class="text-2xl font-bold mb-2"><span id="fat-current">0</span> / 6 Thumbs</div>
-        <progress id="fat-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0" max="6"></progress>
-        <div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('fat',1)" class="btn-control">+1</button><button onclick="window.addPortion('fat',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('fat',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('fat',-1)" class="btn-control">-1</button></div>
-      </div>
+      <div class="card"><h2 class="text-xl font-semibold mb-2">🍗 Protein</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="protein-current">0</span> / <span id="protein-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 25g)</div><progress id="protein-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0"></progress><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('protein',1)" class="btn-control">+1</button><button onclick="window.addPortion('protein',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('protein',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('protein',-1)" class="btn-control">-1</button></div></div>
+      <div class="card"><h2 class="text-xl font-semibold mb-2">🥗 Veggies</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="veggies-current">0</span> / <span id="veggies-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 250-500g)</div><progress id="veggies-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0"></progress><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('veggies',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('veggies',0.25)" class="btn-control">+0.25</button><button onclick="window.addPortion('veggies',-0.25)" class="btn-control">-0.25</button><button onclick="window.addPortion('veggies',-0.5)" class="btn-control">-0.5</button></div></div>
+      <div class="card"><h2 class="text-xl font-semibold mb-2">🍞 Carbs</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="carbs-current">0</span> / <span id="carbs-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 25g)</div><progress id="carbs-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0"></progress><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('carbs',1)" class="btn-control">+1</button><button onclick="window.addPortion('carbs',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('carbs',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('carbs',-1)" class="btn-control">-1</button></div></div>
+      <div class="card"><h2 class="text-xl font-semibold mb-2">🥑 Fat</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="fat-current">0</span> / <span id="fat-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 11g)</div><progress id="fat-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0"></progress><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('fat',1)" class="btn-control">+1</button><button onclick="window.addPortion('fat',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('fat',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('fat',-1)" class="btn-control">-1</button></div></div>
     </section>
 
     <section class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Quick Add</h2>
+      <h2 class="text-xl font-semibold mb-2">Quick Add (kcal)</h2>
       <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <button onclick="window.logItem('Breakfast')" class="btn-main">Breakfast</button><button onclick="window.logItem('2dl Oat Milk')" class="btn-main">2dl Oat Milk</button><button onclick="window.logItem('Plenny 600')" class="btn-main">Plenny 600</button><button onclick="window.logItem('Plenny 400')" class="btn-main">Plenny 400</button><button onclick="window.logItem('Protein Bar')" class="btn-main">Protein Bar</button><button onclick="window.logItem('Croissant')" class="btn-main">Croissant</button>
+        <button onclick="window.logItem('Plenny 600')" class="btn-main">Plenny 600</button>
+        <button onclick="window.logItem('Plenny 400')" class="btn-main">Plenny 400</button>
+        <button onclick="window.logItem('Protein Bar')" class="btn-main">Protein Bar</button>
+        <button onclick="window.logItem('Oat Milk')" class="btn-main">Oat Milk</button>
       </div>
     </section>
-
+    
     <section class="mb-6 bg-white p-4 rounded-xl shadow-md">
       <h2 class="text-xl font-semibold mb-3 text-center">⚖️ Daily Weight</h2>
       <div class="flex justify-center items-center gap-4">
@@ -105,12 +89,10 @@
   <div id="feedback-toast" class="feedback"></div>
 
   <script type="module">
-    // --- Firebase SDK Imports ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
     import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
     import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-    // --- Firebase Configuration ---
     const firebaseConfig = {
       apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
       authDomain: "tracker-6e7d9.firebaseapp.com",
@@ -121,28 +103,12 @@
       measurementId: "G-E0B6ZVKGNZ"
     };
 
-    // --- Application State and Constants ---
-    let db, auth;
-    let userId = null;
-    let unsubscribeSnapshot = null;
-    const caloriesPerPortion = { protein: 145, veggies: 25, carbs: 120, fat: 100 };
-    const targets = { protein: 4, veggies: 5, carbs: 8, fat: 6 };
+    let db, auth, userId = null, unsubscribeSnapshot = null;
+    const targets = { protein: 5, veggies: 2, carbs: 8, fat: 7 };
     let currentFoodData = { protein: 0, veggies: 0, carbs: 0, fat: 0 };
 
-    // --- DOM Elements ---
-    const authContainer = document.getElementById('auth-container');
-    const appContainer = document.getElementById('app-container');
-    const emailInput = document.getElementById('email-input');
-    const passwordInput = document.getElementById('password-input');
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const userEmailSpan = document.getElementById('user-email');
-    const toast = document.getElementById('feedback-toast');
-    const weightInput = document.getElementById('weight-input');
-    const saveWeightBtn = document.getElementById('save-weight-btn');
+    const authContainer = document.getElementById('auth-container'), appContainer = document.getElementById('app-container'), emailInput = document.getElementById('email-input'), passwordInput = document.getElementById('password-input'), loginBtn = document.getElementById('login-btn'), signupBtn = document.getElementById('signup-btn'), logoutBtn = document.getElementById('logout-btn'), userEmailSpan = document.getElementById('user-email'), toast = document.getElementById('feedback-toast'), weightInput = document.getElementById('weight-input'), saveWeightBtn = document.getElementById('save-weight-btn');
 
-    // --- UI Update Functions ---
     const showFeedback = (message, isError = false) => {
         toast.textContent = message;
         toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
@@ -151,73 +117,58 @@
     }
 
     const updateUI = () => {
-      ['protein', 'veggies', 'carbs', 'fat'].forEach(k => {
-        const val = +currentFoodData[k].toFixed(1);
+      Object.keys(targets).forEach(k => {
+        const val = currentFoodData[k] !== undefined ? +currentFoodData[k].toFixed(2) : 0;
         document.getElementById(`${k}-current`).textContent = val;
-        document.getElementById(`${k}-progress`).value = val;
+        document.getElementById(`${k}-target-display`).textContent = targets[k];
+        const progress = document.getElementById(`${k}-progress`);
+        progress.value = val;
+        progress.max = targets[k];
       });
       updateCalories();
     };
 
     const updateCalories = () => {
-      const calCur = Object.entries(currentFoodData).reduce((sum, [k, v]) => sum + v * caloriesPerPortion[k], 0);
-      const calTar = Object.entries(targets).reduce((sum, [k, v]) => sum + v * caloriesPerPortion[k], 0);
+      const calCur = Object.values(currentFoodData).reduce((sum, v) => sum + v, 0) * 100;
+      const calTar = Object.values(targets).reduce((sum, v) => sum + v, 0) * 100;
       document.getElementById('cal-current').textContent = Math.round(calCur);
       document.getElementById('cal-target').textContent = Math.round(calTar);
     };
     
-    // --- Data Logic Functions ---
     const getTodaysDateString = () => new Date().toISOString().split('T')[0];
 
-    const saveWeightToFirestore = async () => {
+    const saveDataToFirestore = async (dataToSave) => {
         if (!userId) return;
-        const weightValue = parseFloat(weightInput.value);
-        if (isNaN(weightValue) || weightValue <= 0) {
-            showFeedback("Please enter a valid weight.", true);
-            return;
-        }
         const dateStr = getTodaysDateString();
         const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
         try {
-            await setDoc(docRef, { weight: weightValue }, { merge: true });
-            showFeedback("Weight saved!");
+            await setDoc(docRef, dataToSave, { merge: true });
         } catch (error) {
-            console.error("Error saving weight: ", error);
-            showFeedback("Error saving weight.", true);
+            console.error("Error saving data: ", error);
+            showFeedback("Error saving data.", true);
         }
     };
+    
+    const saveFoodData = () => {
+        const totalCalories = Math.round(Object.values(currentFoodData).reduce((sum, v) => sum + v, 0) * 100);
+        saveDataToFirestore({ food: currentFoodData, totalCalories });
+    };
 
-    const saveFoodDataToFirestore = async () => {
-      if (!userId) return;
-      const dateStr = getTodaysDateString();
-      const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
-      try {
-        // Calculate total calories before saving
-        const totalCalories = Math.round(Object.entries(currentFoodData).reduce((sum, [k, v]) => sum + v * caloriesPerPortion[k], 0));
-        
-        // Save portions and total calories
-        await setDoc(docRef, { 
-            food: currentFoodData,
-            totalCalories: totalCalories
-        }, { merge: true });
-
-      } catch (error) {
-        console.error("Error saving data: ", error);
-        showFeedback("Error saving data.", true);
-      }
+    const saveWeight = () => {
+        const weightValue = parseFloat(weightInput.value);
+        if (isNaN(weightValue) || weightValue <= 0) { showFeedback("Please enter a valid weight.", true); return; }
+        saveDataToFirestore({ weight: weightValue });
+        showFeedback("Weight saved!");
     };
     
     const listenToTodaysData = () => {
         if (unsubscribeSnapshot) unsubscribeSnapshot();
         if (!userId) return;
-
         const dateStr = getTodaysDateString();
         const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
-
         unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
             currentFoodData = { protein: 0, veggies: 0, carbs: 0, fat: 0 };
             weightInput.value = '';
-            
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 if(data.food) currentFoodData = data.food;
@@ -230,27 +181,28 @@
         });
     };
     
-    // --- Global Functions ---
     window.addPortion = (type, amt) => {
-      const currentVal = currentFoodData[type] || 0;
-      currentFoodData[type] = Math.max(0, +((currentVal + amt).toFixed(1)));
+      currentFoodData[type] = Math.max(0, (currentFoodData[type] || 0) + amt);
       updateUI();
-      saveFoodDataToFirestore();
+      saveFoodData();
     };
     
     window.logItem = (name) => {
-        const map = {'Breakfast':{p:0.5,v:0,c:2.5,f:1},'2dl Oat Milk':{p:0,v:0,c:0.5,f:0.5},'Plenny 600':{p:1,v:0,c:2.5,f:1.5},'Plenny 400':{p:0.5,v:0,c:2,f:1},'Protein Bar':{p:1,v:0,c:1,f:1},'Croissant':{p:0,v:0,c:1,f:1}};
+        const map = {
+            'Plenny 600': { protein: 1.5, carbs: 3, fat: 1.5 }, // 600 kcal
+            'Plenny 400': { protein: 1, carbs: 2, fat: 1 },     // 400 kcal
+            'Protein Bar': { protein: 1, carbs: 0.5, fat: 0.5 },// 200 kcal
+            'Oat Milk': { carbs: 0.5, fat: 0.1 }             // ~60 kcal
+        };
         const item = map[name];
         if (!item) return;
-        currentFoodData.protein += (item.p || 0);
-        currentFoodData.veggies += (item.v || 0);
-        currentFoodData.carbs += (item.c || 0);
-        currentFoodData.fat += (item.f || 0);
+        Object.keys(item).forEach(k => {
+            currentFoodData[k] = (currentFoodData[k] || 0) + item[k];
+        });
         updateUI();
-        saveFoodDataToFirestore();
+        saveFoodData();
     };
     
-    // --- Initialization & Auth Listeners ---
     document.addEventListener('DOMContentLoaded', () => {
       try {
         const app = initializeApp(firebaseConfig);
@@ -276,38 +228,10 @@
           }
         });
 
-        loginBtn.addEventListener('click', async () => {
-            try {
-                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-                showFeedback("Logged in successfully!");
-            } catch (error) {
-                console.error("Login Error:", error.message);
-                showFeedback(`Login failed: ${error.message}`, true);
-            }
-        });
-
-        signupBtn.addEventListener('click', async () => {
-            try {
-                await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-                showFeedback("Signed up successfully!");
-            } catch (error) {
-                console.error("Signup Error:", error.message);
-                showFeedback(`Signup failed: ${error.message}`, true);
-            }
-        });
-
-        logoutBtn.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-                showFeedback("Logged out.");
-            } catch (error) {
-                console.error("Logout Error:", error.message);
-                showFeedback(`Logout failed: ${error.message}`, true);
-            }
-        });
-        
-        saveWeightBtn.addEventListener('click', saveWeightToFirestore);
-
+        loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(`Login failed: ${e.message}`, true)));
+        signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(`Signup failed: ${e.message}`, true)));
+        logoutBtn.addEventListener('click', () => signOut(auth));
+        saveWeightBtn.addEventListener('click', saveWeight);
       } catch (error) {
         console.error("Firebase initialization failed:", error);
         showFeedback("Failed to initialize the application.", true);
