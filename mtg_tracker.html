@@ -309,7 +309,7 @@
         if (!userId) return;
         
         // Correct path for private user data
-        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'mtg_logs');
+        const logsCollectionRef = collection(db, 'users', userId, 'mtg_logs');
         const q = query(logsCollectionRef, orderBy('timestamp', 'desc'));
 
         unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
@@ -348,7 +348,7 @@
             timestamp: serverTimestamp()
         };
         try {
-            const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'mtg_logs');
+            const logsCollectionRef = collection(db, 'users', userId, 'mtg_logs');
             await addDoc(logsCollectionRef, newLog);
             showFeedback(`Game logged as a ${outcome}!`);
             opponentDeckInput.value = '';
@@ -410,6 +410,8 @@
         document.body.innerHTML = `<div class="p-8 text-center text-red-600">Application failed to start. See console for details.</div>`;
       }
     });
+
+    
   </script>
 </body>
 </html>
