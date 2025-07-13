@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MTG Arena Game Log</title>
+  <!-- Favicon representing the 5 colors of Magic -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%231a1a1a'/><g transform='translate(50 50)'><path d='M0,-40 A40,40 0 0,1 38,-12 L0,0Z' fill='%23F8F7F4'/><path d='M38,-12 A40,40 0 0,1 23,32 L0,0Z' fill='%232E5A8A'/><path d='M23,32 A40,40 0 0,1 -23,32 L0,0Z' fill='%23150B00'/><path d='M-23,32 A40,40 0 0,1 -38,-12 L0,0Z' fill='%23D3202A'/><path d='M-38,-12 A40,40 0 0,1 0,-40 L0,0Z' fill='%2300733E'/></g></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; color: #1f2937; }
+    .btn-main, .btn-secondary, .btn-win, .btn-loss { padding: .5rem 1rem; border-radius: .5rem; font-weight: 600; transition: all 0.2s; cursor: pointer; border: 1px solid transparent; }
+    .btn-main { background-color: #4f46e5; color: #fff; }
+    .btn-main:hover { background-color: #4338ca; }
+    .btn-secondary { background-color: #e5e7eb; color: #374151; border-color: #d1d5db; }
+    .btn-secondary:hover { background-color: #d1d5db; }
+    .btn-win { background-color: #10b981; color: white; }
+    .btn-win:hover { background-color: #059669; }
+    .btn-loss { background-color: #ef4444; color: white; }
+    .btn-loss:hover { background-color: #dc2626; }
+    .card { background-color: white; padding: 1.5rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1); }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .hidden { display: none; }
+    input, textarea, select {
+        background-color: #f9fafb;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        width: 100%;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus, textarea:focus, select:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.3);
+    }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    th { background-color: #f9fafb; font-weight: 600; color: #4b5563; }
+    tbody tr:hover { background-color: #f9fafb; }
+    .win-text { color: #10b981; font-weight: 600; }
+    .loss-text { color: #ef4444; font-weight: 600; }
+  </style>
+</head>
+<body class="antialiased">
+
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg hidden">
+    <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">MTG Log In</h2>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
+  </div>
+
+  <!-- Main App Container -->
+  <div id="app-container" class="container mx-auto max-w-7xl p-4 sm:p-6 lg:p-8 hidden">
+    <header class="text-center mb-8 relative">
+      <h1 class="text-4xl font-bold text-gray-800">MTG Arena Game Log</h1>
+      <p id="user-email" class="text-gray-500 mt-1">Track your games, analyze your performance.</p>
+      <div class="absolute top-0 right-0">
+        <button id="logout-btn" class="btn-secondary text-sm">Log Out</button>
+      </div>
+    </header>
+
+    <!-- Loading State -->
+    <div id="loading-state" class="text-center py-10">
+      <p class="text-gray-500">Loading Game Data...</p>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="hidden">
+      <!-- Input Form -->
+      <section id="input-section" class="card mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Log a New Game</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div>
+            <label for="deck-name" class="block text-sm font-medium text-gray-700 mb-1">Deck Name</label>
+            <input type="text" id="deck-name" list="deck-names-datalist" placeholder="e.g., Izzet Spellslinger">
+            <datalist id="deck-names-datalist"></datalist>
+          </div>
+          <div>
+            <label for="deck-version" class="block text-sm font-medium text-gray-700 mb-1">Deck Version</label>
+            <input type="text" id="deck-version" list="deck-versions-datalist" placeholder="e.g., v2.1">
+            <datalist id="deck-versions-datalist"></datalist>
+          </div>
+          <div>
+            <label for="event-type" class="block text-sm font-medium text-gray-700 mb-1">Event Type</label>
+            <input type="text" id="event-type" list="event-types-datalist" placeholder="e.g., Alchemy Event (Paid)">
+            <datalist id="event-types-datalist"></datalist>
+          </div>
+          <div class="lg:col-span-2">
+            <label for="opponent-deck" class="block text-sm font-medium text-gray-700 mb-1">Opponent Deck</label>
+            <input type="text" id="opponent-deck" list="opponent-decks-datalist" placeholder="e.g., Mono-Black Midrange">
+            <datalist id="opponent-decks-datalist"></datalist>
+          </div>
+          <div class="flex items-end">
+             <div class="grid grid-cols-2 gap-2 w-full">
+                <button id="win-btn" class="btn-win w-full">WIN</button>
+                <button id="loss-btn" class="btn-loss w-full">LOSS</button>
+            </div>
+          </div>
+          <div class="md:col-span-2 lg:col-span-3">
+            <label for="notes" class="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+            <textarea id="notes" rows="2" placeholder="e.g., Kept a risky hand, opponent was mana screwed..."></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- Deck Performance Summary -->
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Deck Performance</h2>
+        <div id="deck-summary-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <p id="no-decks-message" class="text-gray-500 col-span-full">Log a game to see deck summaries.</p>
+        </div>
+      </section>
+
+      <!-- Full Game Log -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4 text-gray-700">Full Log</h2>
+        <div class="card overflow-x-auto">
+          <table id="log-table" class="min-w-full text-sm">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Deck</th>
+                <th>Version</th>
+                <th>Outcome</th>
+                <th>Opponent Deck</th>
+                <th>Event Type</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody id="log-table-body"></tbody>
+          </table>
+          <p id="no-logs-message" class="text-gray-500 text-center py-4">No games logged yet.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="feedback-toast" class="feedback"></div>
+
+  <script type="module">
+    // Firebase Imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
+
+    // --- GLOBAL VARIABLES & CONSTANTS ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-mtg-log-app';
+
+    let db, auth, userId = null;
+    let unsubscribeSnapshot = null;
+    let allLogs = [];
+
+    // --- UI ELEMENT REFERENCES ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const loadingState = document.getElementById('loading-state');
+    const mainContent = document.getElementById('main-content');
+    const deckNameInput = document.getElementById('deck-name');
+    const deckVersionInput = document.getElementById('deck-version');
+    const eventTypeInput = document.getElementById('event-type');
+    const opponentDeckInput = document.getElementById('opponent-deck');
+    const notesInput = document.getElementById('notes');
+    const winBtn = document.getElementById('win-btn');
+    const lossBtn = document.getElementById('loss-btn');
+    const toast = document.getElementById('feedback-toast');
+    const logTableBody = document.getElementById('log-table-body');
+    const noLogsMessage = document.getElementById('no-logs-message');
+    const deckSummaryContainer = document.getElementById('deck-summary-container');
+    const noDecksMessage = document.getElementById('no-decks-message');
+    const deckNamesDatalist = document.getElementById('deck-names-datalist');
+    const deckVersionsDatalist = document.getElementById('deck-versions-datalist');
+    const eventTypesDatalist = document.getElementById('event-types-datalist');
+    const opponentDecksDatalist = document.getElementById('opponent-decks-datalist');
+
+    // --- UTILITY FUNCTIONS ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#ef4444' : '#1f2937';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    };
+
+    const formatDate = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+        return date.toISOString().split('T')[0];
+    };
+
+    // --- DATA PROCESSING & UI UPDATES ---
+    const calculateDeckStats = (logs) => {
+        const stats = {};
+        logs.forEach(log => {
+            const deckKey = `${log.deckName} ${log.deckVersion || ''}`.trim();
+            if (!stats[deckKey]) {
+                stats[deckKey] = { wins: 0, losses: 0, lastPlayed: new Date(0), deckName: log.deckName, deckVersion: log.deckVersion || '' };
+            }
+            if (log.outcome === 'Win') {
+                stats[deckKey].wins++;
+            } else {
+                stats[deckKey].losses++;
+            }
+            const logDate = log.timestamp?.toDate ? log.timestamp.toDate() : new Date();
+            if (logDate > stats[deckKey].lastPlayed) {
+                stats[deckKey].lastPlayed = logDate;
+            }
+        });
+        return stats;
+    };
+
+    const renderDeckSummary = (stats) => {
+        deckSummaryContainer.innerHTML = '';
+        const decks = Object.values(stats);
+        if (decks.length === 0) {
+            noDecksMessage.classList.remove('hidden');
+            return;
+        }
+        noDecksMessage.classList.add('hidden');
+        decks.sort((a, b) => b.lastPlayed - a.lastPlayed);
+        decks.forEach(deck => {
+            const totalGames = deck.wins + deck.losses;
+            const winRate = totalGames > 0 ? (deck.wins / totalGames * 100).toFixed(1) : 0;
+            const cardHTML = `
+                <div class="card flex flex-col">
+                    <h3 class="text-lg font-bold text-indigo-700">${deck.deckName}</h3>
+                    <p class="text-sm text-gray-500 mb-2">${deck.deckVersion}</p>
+                    <div class="text-3xl font-bold text-gray-800 my-2">${winRate}%</div>
+                    <p class="text-sm text-gray-600">${deck.wins} W - ${deck.losses} L (${totalGames} Games)</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-4">
+                        <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${winRate}%"></div>
+                    </div>
+                </div>`;
+            deckSummaryContainer.innerHTML += cardHTML;
+        });
+    };
+
+    const renderLogTable = (logs) => {
+        logTableBody.innerHTML = '';
+        if (logs.length === 0) {
+            noLogsMessage.classList.remove('hidden');
+            logTableBody.closest('table').classList.add('hidden');
+            return;
+        }
+        noLogsMessage.classList.add('hidden');
+        logTableBody.closest('table').classList.remove('hidden');
+        logs.forEach(log => {
+            const outcomeClass = log.outcome === 'Win' ? 'win-text' : 'loss-text';
+            const row = `
+                <tr>
+                    <td>${formatDate(log.timestamp)}</td>
+                    <td>${log.deckName || ''}</td>
+                    <td>${log.deckVersion || ''}</td>
+                    <td class="${outcomeClass}">${log.outcome || ''}</td>
+                    <td>${log.opponentDeck || ''}</td>
+                    <td>${log.eventType || ''}</td>
+                    <td class="text-gray-500 text-xs">${log.notes || ''}</td>
+                </tr>`;
+            logTableBody.innerHTML += row;
+        });
+    };
+
+    const populateDatalists = (logs) => {
+        const deckNames = new Set();
+        const deckVersions = new Set();
+        const eventTypes = new Set();
+        const opponentDecks = new Set();
+        logs.forEach(log => {
+            if (log.deckName) deckNames.add(log.deckName);
+            if (log.deckVersion) deckVersions.add(log.deckVersion);
+            if (log.eventType) eventTypes.add(log.eventType);
+            if (log.opponentDeck) opponentDecks.add(log.opponentDeck);
+        });
+        const createOptions = (set) => Array.from(set).map(item => `<option value="${item}"></option>`).join('');
+        deckNamesDatalist.innerHTML = createOptions(deckNames);
+        deckVersionsDatalist.innerHTML = createOptions(deckVersions);
+        eventTypesDatalist.innerHTML = createOptions(eventTypes);
+        opponentDecksDatalist.innerHTML = createOptions(opponentDecks);
+    };
+
+    // --- FIRESTORE & AUTHENTICATION ---
+    const listenToLogs = () => {
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        if (!userId) return;
+        
+        // Correct path for private user data
+        const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'mtg_logs');
+        const q = query(logsCollectionRef, orderBy('timestamp', 'desc'));
+
+        unsubscribeSnapshot = onSnapshot(q, (querySnapshot) => {
+            allLogs = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderLogTable(allLogs);
+            const stats = calculateDeckStats(allLogs);
+            renderDeckSummary(stats);
+            populateDatalists(allLogs);
+            loadingState.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        }, (error) => {
+            console.error("Error listening to logs:", error);
+            showFeedback("Could not fetch game logs. You can still add new ones.", true);
+            // Even on error, show the main UI so the user isn't stuck.
+            loadingState.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+            renderLogTable([]);
+            renderDeckSummary({});
+            populateDatalists([]);
+        });
+    };
+
+    const logGame = async (outcome) => {
+        const deckName = deckNameInput.value.trim();
+        if (!deckName) {
+            showFeedback("Deck Name is required.", true);
+            return;
+        }
+        const newLog = {
+            deckName,
+            deckVersion: deckVersionInput.value.trim(),
+            eventType: eventTypeInput.value.trim(),
+            opponentDeck: opponentDeckInput.value.trim(),
+            notes: notesInput.value.trim(),
+            outcome,
+            timestamp: serverTimestamp()
+        };
+        try {
+            const logsCollectionRef = collection(db, 'artifacts', appId, 'users', userId, 'mtg_logs');
+            await addDoc(logsCollectionRef, newLog);
+            showFeedback(`Game logged as a ${outcome}!`);
+            opponentDeckInput.value = '';
+            notesInput.value = '';
+            opponentDeckInput.focus();
+        } catch (error) {
+            console.error("Error adding document: ", error);
+            showFeedback("Failed to log game.", true);
+        }
+    };
+
+    // --- INITIALIZATION ---
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!firebaseConfig) {
+        document.body.innerHTML = `<div class="p-8 text-center text-red-600">Firebase configuration is missing. App cannot start.</div>`;
+        return;
+      }
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            userEmailSpan.textContent = user.email;
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            listenToLogs();
+          } else {
+            userId = null;
+            if (unsubscribeSnapshot) unsubscribeSnapshot();
+            allLogs = [];
+            renderLogTable([]);
+            renderDeckSummary({});
+            mainContent.classList.add('hidden');
+            loadingState.classList.add('hidden');
+            authContainer.classList.remove('hidden');
+          }
+        });
+
+        loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(`Login failed: ${e.message}`, true)));
+        signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(`Signup failed: ${e.message}`, true)));
+        logoutBtn.addEventListener('click', () => signOut(auth));
+        winBtn.addEventListener('click', () => logGame('Win'));
+        lossBtn.addEventListener('click', () => logGame('Loss'));
+
+        deckNameInput.addEventListener('change', () => {
+            const selectedDeckName = deckNameInput.value.trim();
+            if (!selectedDeckName) {
+                deckVersionInput.value = '';
+                return;
+            }
+            const mostRecentLogForDeck = allLogs.find(log => log.deckName === selectedDeckName);
+            deckVersionInput.value = (mostRecentLogForDeck && mostRecentLogForDeck.deckVersion) ? mostRecentLogForDeck.deckVersion : '';
+        });
+      } catch (error) {
+        console.error("Initialization failed:", error);
+        document.body.innerHTML = `<div class="p-8 text-center text-red-600">Application failed to start. See console for details.</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
