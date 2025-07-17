@@ -276,7 +276,7 @@
             const data = doc.data();
             const date = data.timestamp.toDate().toISOString().split('T')[0];
             if (!medSessionsByDate[date]) medSessionsByDate[date] = { duration: [], conc: [], clar: [], equa: [], midl: [] };
-            medSessionsByDate[date].duration.push(data.durationMinutes);
+            medSessionsByDate[date].duration.push(data.durationSeconds);
             medSessionsByDate[date].conc.push(data.concentration);
             medSessionsByDate[date].clar.push(data.clarity);
             medSessionsByDate[date].equa.push(data.equanimity);
