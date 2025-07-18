@@ -206,24 +206,17 @@
     // --- Sound Synthesis ---
     const setupAudio = () => {
         if (!bellSynth) {
-            bellSynth = new Tone.FMSynth({
-                harmonicity: 1.414,
-                modulationIndex: 10,
-                envelope: { attack: 0.01, decay: 0.4, sustain: 0, release: 4 },
-                modulationEnvelope: { attack: 0.01, decay: 0.5, sustain: 0, release: 0.8 }
-            });
-            const volume = new Tone.Volume(6); // Increase volume by 6dB
-            const reverb = new Tone.Reverb({ decay: 5, wet: 0.4 });
-            
-            // Chain: synth -> reverb -> volume -> destination
-            bellSynth.chain(reverb, volume, Tone.Destination);
+            bellSynth = new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
+            }).toDestination();
         }
     };
 
     const playBell = (note, duration) => {
         if (Tone.context.state !== 'running') { Tone.start(); }
         if (!bellSynth) setupAudio();
-        bellSynth.triggerAttackRelease(note, duration, Tone.now(), 0.8);
+        bellSynth.triggerAttackRelease(note, duration);
     };
 
     const resetEvaluationForm = () => {
@@ -252,7 +245,7 @@
             timerDisplay.textContent = formatTime(elapsedSeconds);
 
             if (!intervalChimePlayed && intervalTime > 0 && elapsedSeconds >= intervalTime) {
-                playBell('G4', '1n');
+                playBell('G4', "8n");
                 chimeMessage.textContent = 'Interval';
                 chimeMessage.style.opacity = 1;
                 setTimeout(() => chimeMessage.style.opacity = 0, 3000);
@@ -260,7 +253,7 @@
             }
 
             if (!mainChimePlayed && mainChimeTime > 0 && elapsedSeconds >= mainChimeTime) {
-                playBell('C4', '2n');
+                playBell('C4', "8n");
                 chimeMessage.textContent = 'Chime';
                 chimeMessage.style.opacity = 1;
                 setTimeout(() => chimeMessage.style.opacity = 0, 3000);
@@ -338,8 +331,8 @@
             startBtn.addEventListener('click', startTimer);
             stopBtn.addEventListener('click', stopTimer);
             document.getElementById('save-session-btn').addEventListener('click', saveSession);
-            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '2n'));
-            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '1n'));
+            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '8n'));
+            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '8n'));
 
             ['concentration', 'clarity', 'equanimity'].forEach(id => {
                 const slider = document.getElementById(`${id}-slider`);
