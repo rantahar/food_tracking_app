@@ -20,15 +20,32 @@
     .btn-secondary:hover { background-color: #e5e7eb; }
     .btn-test { background: none; color: #6b7280; font-size: 0.9rem; padding: 0.5rem 1rem; }
     .btn-test:hover { background-color: #e5e7eb; }
-    .btn-stop { background-color: #c2410c; color: white; } /* Changed from red to earthy orange */
+    .btn-stop { background-color: #c2410c; color: white; }
     .btn-stop:hover { background-color: #9a3412; }
     .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
     .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
     .hidden { display: none; }
-    input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
-    input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #348a7b; cursor: pointer; border-radius: 50%; }
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    /* New styles for radio button "pills" */
+    input[type="radio"].metric-option { display: none; }
+    input[type="radio"].metric-option + label {
+        display: inline-block;
+        padding: 0.5rem 1.25rem;
+        border: 1px solid #d1d5db;
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        font-weight: 500;
+    }
+    input[type="radio"].metric-option:hover + label {
+        border-color: #a1a1aa;
+    }
+    input[type="radio"].metric-option:checked + label {
+        background-color: #348a7b;
+        color: white;
+        border-color: #348a7b;
+    }
   </style>
 </head>
 <body class="text-gray-800">
@@ -90,19 +107,8 @@
     <div id="evaluation-view" class="hidden container mx-auto max-w-lg p-8">
         <h2 class="text-3xl font-bold text-center mb-2">Session Review</h2>
         <p class="text-center text-gray-600 mb-8">Duration: <span id="final-duration"></span></p>
-        <div class="space-y-6">
-            <div>
-                <label for="concentration-slider" class="block text-lg font-medium mb-2">Concentration: <span id="concentration-value">-</span></label>
-                <input id="concentration-slider" type="range" min="0" max="5">
-            </div>
-            <div>
-                <label for="clarity-slider" class="block text-lg font-medium mb-2">Clarity: <span id="clarity-value">-</span></label>
-                <input id="clarity-slider" type="range" min="0" max="5">
-            </div>
-            <div>
-                <label for="equanimity-slider" class="block text-lg font-medium mb-2">Equanimity: <span id="equanimity-value">-</span></label>
-                <input id="equanimity-slider" type="range" min="0" max="5">
-            </div>
+        <div class="space-y-8"> <div id="evaluation-options-container" class="space-y-6">
+                </div>
             <div>
                 <label for="midl-marker-input" class="block text-lg font-medium mb-2 text-center">MIDL Marker</label>
                 <input id="midl-marker-input" type="number" min="0" max="12" placeholder="-" class="w-full text-center text-2xl font-bold bg-transparent border-2 border-gray-300 rounded-lg p-2 focus:outline-none focus:border-green-600">
@@ -137,10 +143,62 @@
     let db, auth, userId = null;
     let timerIntervalId = null;
     let bellSynth; 
-    let sliderInteracted = { concentration: false, clarity: false, equanimity: false };
     let sessionStartTime = 0;
     let finalSessionDuration = 0;
     let wakeLock = null;
+
+    const evaluationMetrics = {
+        joy: {
+            label: "Joy",
+            options: [
+                { label: "None", value: 0 },
+                { label: "Subtle", value: 1 },
+                { label: "Strong", value: 2 }
+            ]
+        },
+        clarity: {
+            label: "Clarity",
+            options: [
+                { label: "Conceptual", value: 0 },
+                { label: "Observing", value: 1 },
+                { label: "Crisp", value: 2 },
+            ]
+        },
+        restlesseness: {
+            label: "Restlessness",
+            options: [
+                { label: "Gross", value: 0 },
+                { label: "Subtle", value: 1 },
+                { label: "None", value: 2 }
+            ]
+        },
+        distractions: {
+            label: "Distractions",
+            options: [
+                { label: "Forgetting", value: 0 },
+                { label: "Gross", value: 0 },
+                { label: "Subtle", value: 1 },
+                { label: "None", value: 2 }
+            ]
+        },
+        dullness: {
+            label: "Dullness",
+            options: [
+                { label: "Sleepy", value: 0 },
+                { label: "Gross", value: 0 },
+                { label: "Subtle", value: 1 },
+                { label: "None", value: 2 }
+            ]
+        },
+        reactivity: {
+            label: "Reactivity",
+            options: [
+                { label: "Gross", value: 2 },
+                { label: "Subtle (control)", value: 1 },
+                { label: "None", value: 0 }
+            ]
+        },
+    }
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -163,6 +221,7 @@
     const timerDisplay = document.getElementById('timer-display');
     const chimeMessage = document.getElementById('chime-message');
     const finalDurationSpan = document.getElementById('final-duration');
+    const evaluationOptionsContainer = document.getElementById('evaluation-options-container');
 
     // --- UI Update & Utility ---
     const showFeedback = (message, isError = false) => {
@@ -181,6 +240,42 @@
         const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
         const secs = (seconds % 60).toString().padStart(2, '0');
         return `${mins}:${secs}`;
+    };
+
+    const renderEvaluationOptions = () => {
+        evaluationOptionsContainer.innerHTML = ''; // Clear previous content
+        for (const key in evaluationMetrics) {
+            const metric = evaluationMetrics[key];
+            const fieldset = document.createElement('fieldset');
+            fieldset.className = 'text-center';
+
+            const legend = document.createElement('legend');
+            legend.className = 'block text-lg font-medium text-gray-700 mb-3';
+            legend.textContent = metric.label;
+            fieldset.appendChild(legend);
+
+            const optionsWrapper = document.createElement('div');
+            optionsWrapper.className = 'flex justify-center flex-wrap gap-x-3 gap-y-2';
+
+            metric.options.forEach(option => {
+                const inputId = `${key}-${option.value}`;
+                
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.id = inputId;
+                input.name = key;
+                input.value = option.value;
+                input.className = 'metric-option';
+                optionsWrapper.appendChild(input);
+
+                const label = document.createElement('label');
+                label.htmlFor = inputId;
+                label.textContent = option.label;
+                optionsWrapper.appendChild(label);
+            });
+            fieldset.appendChild(optionsWrapper);
+            evaluationOptionsContainer.appendChild(fieldset);
+        }
     };
 
     // --- Screen Wake Lock ---
@@ -220,9 +315,8 @@
     };
 
     const resetEvaluationForm = () => {
-        sliderInteracted = { concentration: false, clarity: false, equanimity: false };
-        document.querySelectorAll('#evaluation-view input[type="range"]').forEach(slider => {
-            document.getElementById(`${slider.id.split('-')[0]}-value`).textContent = '-';
+        document.querySelectorAll('#evaluation-view input[type="radio"]').forEach(radio => {
+            radio.checked = false;
         });
         document.getElementById('midl-marker-input').value = '';
     };
@@ -274,11 +368,6 @@
     // --- Data Saving ---
     const saveSession = async () => {
         if (!userId) { showFeedback("You must be logged in to save.", true); return; }
-
-        const concentrationSlider = document.getElementById('concentration-slider');
-        const claritySlider = document.getElementById('clarity-slider');
-        const equanimitySlider = document.getElementById('equanimity-slider');
-        const midlMarkerInput = document.getElementById('midl-marker-input');
         
         const sessionData = {
             userId: userId,
@@ -286,14 +375,20 @@
             durationSeconds: finalSessionDuration,
             targetChimeMinutes: parseInt(chimeTimeInput.value, 10),
             intervalMinutes: parseInt(intervalInput.value, 10),
-            concentration: sliderInteracted.concentration ? parseInt(concentrationSlider.value) : null,
-            clarity: sliderInteracted.clarity ? parseInt(claritySlider.value) : null,
-            equanimity: sliderInteracted.equanimity ? parseInt(equanimitySlider.value) : null,
-            midlMarker: midlMarkerInput.value === '' ? null : parseInt(midlMarkerInput.value, 10)
         };
 
+        // Dynamically add metric data from the form
+        for (const key in evaluationMetrics) {
+            const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
+            sessionData[key] = selectedOption ? parseInt(selectedOption.value, 10) : null;
+        }
+        
+        const midlMarkerInput = document.getElementById('midl-marker-input');
+        sessionData.midlMarker = midlMarkerInput.value === '' ? null : parseInt(midlMarkerInput.value, 10);
+
         try {
-            await addDoc(collection(db, "users", userId, "meditation_sessions"), sessionData);
+            const docRef = await addDoc(collection(db, "users", userId, "meditation_sessions"), sessionData);
+            console.log("Document written with ID: ", docRef.id);
             showFeedback("Session saved successfully!");
             switchView(setupView);
         } catch (error) {
@@ -308,6 +403,8 @@
             const app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
+
+            renderEvaluationOptions();
             
             onAuthStateChanged(auth, (user) => {
                 if (user) {
@@ -333,15 +430,6 @@
             document.getElementById('save-session-btn').addEventListener('click', saveSession);
             document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '8n'));
             document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '8n'));
-
-            ['concentration', 'clarity', 'equanimity'].forEach(id => {
-                const slider = document.getElementById(`${id}-slider`);
-                const valueSpan = document.getElementById(`${id}-value`);
-                slider.addEventListener('input', () => {
-                    sliderInteracted[id] = true;
-                    valueSpan.textContent = slider.value;
-                });
-            });
 
         } catch (error) {
             console.error("Firebase initialization failed:", error);
