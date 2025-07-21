@@ -67,16 +67,6 @@
       <div class="card"><h2 class="text-xl font-semibold mb-2">🍞 Carbs</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="carbs-current">0</span> / <span id="carbs-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 25g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('carbs',1)" class="btn-control">+1</button><button onclick="window.addPortion('carbs',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('carbs',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('carbs',-1)" class="btn-control">-1</button></div></div>
       <div class="card"><h2 class="text-xl font-semibold mb-2">🥑 Fat</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="fat-current">0</span> / <span id="fat-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 11g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('fat',1)" class="btn-control">+1</button><button onclick="window.addPortion('fat',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('fat',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('fat',-1)" class="btn-control">-1</button></div></div>
     </section>
-
-    <section class="mb-6">
-      <h2 class="text-xl font-semibold mb-2">Quick Add (kcal)</h2>
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-        <button onclick="window.logItem('Plenny 600')" class="btn-main">Plenny 600</button>
-        <button onclick="window.logItem('Plenny 400')" class="btn-main">Plenny 400</button>
-        <button onclick="window.logItem('Protein Bar')" class="btn-main">Protein Bar</button>
-        <button onclick="window.logItem('Oat Milk')" class="btn-main">Oat Milk</button>
-      </div>
-    </section>
     
     <section class="mb-6 bg-white p-4 rounded-xl shadow-md">
       <h2 class="text-xl font-semibold mb-3 text-center">⚖️ Daily Weight</h2>
@@ -187,23 +177,7 @@
       updateUI();
       saveFoodData();
     };
-    
-    window.logItem = (name) => {
-        const map = {
-            'Plenny 600': { protein: 1.5, carbs: 3, fat: 1.5 }, // 600 kcal
-            'Plenny 400': { protein: 1, carbs: 2, fat: 1 },     // 400 kcal
-            'Protein Bar': { protein: 1, carbs: 0.5, fat: 0.5 },// 200 kcal
-            'Oat Milk': { carbs: 0.5, fat: 0.1 }             // ~60 kcal
-        };
-        const item = map[name];
-        if (!item) return;
-        Object.keys(item).forEach(k => {
-            currentFoodData[k] = (currentFoodData[k] || 0) + item[k];
-        });
-        updateUI();
-        saveFoodData();
-    };
-    
+
     document.addEventListener('DOMContentLoaded', () => {
       try {
         const app = initializeApp(firebaseConfig);
