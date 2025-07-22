@@ -131,6 +131,23 @@
         setTimeout(() => { toast.classList.remove('show'); }, 3000);
     };
 
+    const flattenObject = (obj, prefix = '') => {
+      let result = {};
+      for (const key in obj) {
+          if (typeof obj[key] === 'object' && obj[key] !== null && !obj[key].toDate) { // Check for objects, ignore nulls and Timestamps
+              const newPrefix = prefix ? `${prefix}.${key}` : key;
+              Object.assign(result, flattenObject(obj[key], newPrefix));
+          } else {
+              result[prefix ? `${prefix}.${key}` : key] = obj[key];
+          }
+      }
+      return result;
+  };
+
+  const keyToLabel = (key) => {
+      return key.split('.').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+  };
+
     // --- Chart Rendering ---
     const renderTimeSeriesChart = () => {
         if (allData.length === 0) return;
@@ -247,69 +264,85 @@
         if (!userId) return;
         loadingMessage.classList.remove('hidden');
         chartsContainer.classList.add('hidden');
-
+        
+        // 1. Fetch all data concurrently
         const dailyLogsPromise = getDocs(collection(db, 'users', userId, 'daily_logs'));
         const medSessionsPromise = getDocs(collection(db, 'users', userId, 'meditation_sessions'));
         const [dailyLogsSnapshot, medSessionsSnapshot] = await Promise.all([dailyLogsPromise, medSessionsPromise]);
         
+        // 2. Process data and discover fields dynamically
         processedDataForCorrelation = {};
+        const allDiscoveredKeys = new Set();
+        
         dailyLogsSnapshot.forEach(doc => {
             const date = doc.id;
-            const data = doc.data();
-            processedDataForCorrelation[date] = {
-                'totalCalories': data.totalCalories,
-                'weight': data.weight,
-                'habits.bed': data.habits?.bed ? 1 : 0,
-                'habits.mood': data.habits?.mood,
-                'habits.snack': data.habits?.snack,
-                'exercise.cardio': data.exercise?.cardio ? 1 : 0,
-                'exercise.physio': data.exercise?.physio ? 1 : 0,
-                'exercise.pushups': data.exercise?.pushups,
-                'exercise.rows': data.exercise?.rows,
-                'exercise.squats': data.exercise?.squats,
-                'exercise.bridges': data.exercise?.bridges,
-            };
+            const flatData = flattenObject(doc.data());
+            Object.keys(flatData).forEach(key => allDiscoveredKeys.add(key));
+            
+            for(const key in flatData) {
+                if(typeof flatData[key] === 'boolean') {
+                    flatData[key] = flatData[key] ? 1 : 0;
+                }
+            }
+            processedDataForCorrelation[date] = flatData;
         });
-
+      
+        // 3. Aggregate meditation sessions
         const medSessionsByDate = {};
         medSessionsSnapshot.forEach(doc => {
             const data = doc.data();
             const date = data.timestamp.toDate().toISOString().split('T')[0];
-            if (!medSessionsByDate[date]) medSessionsByDate[date] = { duration: [], conc: [], clar: [], equa: [], midl: [] };
+            if (!medSessionsByDate[date]) medSessionsByDate[date] = { duration: [], distractions: [], dullness: [], midl: [] };
             medSessionsByDate[date].duration.push(data.durationSeconds);
-            medSessionsByDate[date].conc.push(data.concentration);
-            medSessionsByDate[date].clar.push(data.clarity);
-            medSessionsByDate[date].equa.push(data.equanimity);
+            medSessionsByDate[date].distractions.push(data.distractions);
+            medSessionsByDate[date].dullness.push(data.dullness);
             medSessionsByDate[date].midl.push(data.midlMarker);
         });
-
+      
         for(const date in medSessionsByDate) {
             if (!processedDataForCorrelation[date]) processedDataForCorrelation[date] = {};
-            processedDataForCorrelation[date]['meditation.duration'] = window.ss.sum(medSessionsByDate[date].duration);
-            processedDataForCorrelation[date]['meditation.concentration'] = window.ss.mean(medSessionsByDate[date].conc.filter(v => v!=null));
-            processedDataForCorrelation[date]['meditation.clarity'] = window.ss.mean(medSessionsByDate[date].clar.filter(v => v!=null));
-            processedDataForCorrelation[date]['meditation.equanimity'] = window.ss.mean(medSessionsByDate[date].equa.filter(v => v!=null));
-            processedDataForCorrelation[date]['meditation.midlMarker'] = window.ss.mean(medSessionsByDate[date].midl.filter(v => v!=null));
+            
+            // --- THIS SECTION IS CORRECTED ---
+            const meditationData = {
+                'meditation.duration': ss.sum(medSessionsByDate[date].duration)
+            };
+            
+            // Check for distractions data before calculating mean
+            const distractionsData = medSessionsByDate[date].distractions.filter(v => v != null);
+            meditationData['meditation.distractions'] = distractionsData.length > 0 ? ss.mean(distractionsData) : null;
+            
+            // Check for dullness data before calculating mean
+            const dullnessData = medSessionsByDate[date].dullness.filter(v => v != null);
+            meditationData['meditation.dullness'] = dullnessData.length > 0 ? ss.mean(dullnessData) : null;
+            
+            // Check for MIDL marker data before calculating mean
+            const midlData = medSessionsByDate[date].midl.filter(v => v != null);
+            meditationData['meditation.midlMarker'] = midlData.length > 0 ? ss.mean(midlData) : null;
+            // --- END CORRECTION ---
+          
+            Object.assign(processedDataForCorrelation[date], meditationData);
+            Object.keys(meditationData).forEach(key => allDiscoveredKeys.add(key));
         }
         
-        allData = Object.keys(processedDataForCorrelation).map(date => ({ date, ...processedDataForCorrelation[date] })).sort((a,b) => a.date.localeCompare(b.date));
-
+        // 4. Prepare data for charts
+        allData = Object.keys(processedDataForCorrelation)
+            .map(date => ({ date, ...processedDataForCorrelation[date] }))
+            .sort((a,b) => a.date.localeCompare(b.date));
+      
         if (allData.length > 0) {
-            const variables = {
-                'General': [{key:'totalCalories', label:'Calories'}, {key:'weight', label:'Weight'}],
-                'Habits': [{key:'habits.bed', label:'Slept by 22:00'}, {key:'habits.mood', label:'Mood'}, {key:'habits.snack', label:'Meditation Snacks'}],
-                'Exercise': [
-                    {key:'exercise.cardio', label:'Cardio'}, {key:'exercise.physio', label:'Physio'},
-                    {key:'exercise.pushups', label:'Pushups'}, {key:'exercise.rows', label:'Rows'},
-                    {key:'exercise.squats', label:'Squats'}, {key:'exercise.bridges', label:'Bridges'}
-                ],
-                'Meditation': [
-                    {key:'meditation.duration', label:'Meditation Duration'}, {key:'meditation.concentration', label:'Concentration'},
-                    {key:'meditation.clarity', label:'Clarity'}, {key:'meditation.equanimity', label:'Equanimity'},
-                    {key:'meditation.midlMarker', label:'MIDL Marker'}
-                ]
-            };
-            populateDropdowns(variables);
+            // 5. Dynamically build the variables object
+            const dynamicVariables = {};
+            allDiscoveredKeys.forEach(key => {
+                const parts = key.split('.');
+                const group = keyToLabel(parts[0]);
+                if (!dynamicVariables[group]) {
+                    dynamicVariables[group] = [];
+                }
+                dynamicVariables[group].push({ key: key, label: keyToLabel(key) });
+            });
+          
+            // 6. Render the UI
+            populateDropdowns(dynamicVariables);
             renderTimeSeriesChart();
             renderCorrelationPlot();
             loadingMessage.classList.add('hidden');
