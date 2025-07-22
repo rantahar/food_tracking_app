@@ -123,6 +123,11 @@
     const correlationResult = document.getElementById('correlation-result');
 
 
+    const dataCleaningRules = {
+      'totalCalories': (value) => (value >= 2000 ? value : null),
+    };
+
+
     // --- UI & Utility Functions ---
     const showFeedback = (message, isError = false) => {
         toast.textContent = message;
@@ -322,6 +327,16 @@
           
             Object.assign(processedDataForCorrelation[date], meditationData);
             Object.keys(meditationData).forEach(key => allDiscoveredKeys.add(key));
+        }
+
+        // Loop through all processed data and apply any matching cleaning rules.
+        for (const date in processedDataForCorrelation) {
+            for (const key in processedDataForCorrelation[date]) {
+                if (dataCleaningRules[key]) {
+                    const originalValue = processedDataForCorrelation[date][key];
+                    processedDataForCorrelation[date][key] = dataCleaningRules[key](originalValue);
+                }
+            }
         }
         
         // 4. Prepare data for charts
