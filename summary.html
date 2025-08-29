@@ -125,6 +125,10 @@
 
     const dataCleaningRules = {
       'totalCalories': (value) => (value >= 2000 ? value : null),
+      'habits.meditation': "Delete",
+      'meditation.concentration': "Delete",
+      'meditation.equanimity': "Delete",
+      'meditation.UserID': "Delete",
     };
 
 
@@ -137,21 +141,21 @@
     };
 
     const flattenObject = (obj, prefix = '') => {
-      let result = {};
-      for (const key in obj) {
-          if (typeof obj[key] === 'object' && obj[key] !== null && !obj[key].toDate) { // Check for objects, ignore nulls and Timestamps
-              const newPrefix = prefix ? `${prefix}.${key}` : key;
-              Object.assign(result, flattenObject(obj[key], newPrefix));
-          } else {
-              result[prefix ? `${prefix}.${key}` : key] = obj[key];
-          }
-      }
-      return result;
-  };
+        let result = {};
+        for (const key in obj) {
+            if (typeof obj[key] === 'object' && obj[key] !== null && !obj[key].toDate) { // Check for objects, ignore nulls and Timestamps
+                const newPrefix = prefix ? `${prefix}.${key}` : key;
+                Object.assign(result, flattenObject(obj[key], newPrefix));
+            } else {
+                result[prefix ? `${prefix}.${key}` : key] = obj[key];
+            }
+        }
+        return result;
+    };
 
-  const keyToLabel = (key) => {
-      return key.split('.').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
-  };
+    const keyToLabel = (key) => {
+        return key.split('.').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    };
 
     // --- Chart Rendering ---
     const renderTimeSeriesChart = () => {
@@ -291,47 +295,68 @@
             }
             processedDataForCorrelation[date] = flatData;
         });
+
       
         // 3. Aggregate meditation sessions
         const medSessionsByDate = {};
+        const discoveredMeditationKeys = new Set();
         medSessionsSnapshot.forEach(doc => {
             const data = doc.data();
             const date = data.timestamp.toDate().toISOString().split('T')[0];
-            if (!medSessionsByDate[date]) medSessionsByDate[date] = { duration: [], distractions: [], dullness: [], midl: [] };
-            medSessionsByDate[date].duration.push(data.durationSeconds);
-            medSessionsByDate[date].distractions.push(data.distractions);
-            medSessionsByDate[date].dullness.push(data.dullness);
-            medSessionsByDate[date].midl.push(data.midlMarker);
+
+            // Initialize the date entry if it doesn't exist
+            if (!medSessionsByDate[date]) medSessionsByDate[date] = {};
+
+            // Dynamically discover keys from the meditation session data
+            Object.keys(data).forEach(key => {
+                if (key !== 'timestamp') { // Exclude the timestamp field
+                    discoveredMeditationKeys.add(key);
+                    if (!medSessionsByDate[date][key]) medSessionsByDate[date][key] = [];
+                    medSessionsByDate[date][key].push(data[key]);
+                }
+            });
         });
       
         for(const date in medSessionsByDate) {
             if (!processedDataForCorrelation[date]) processedDataForCorrelation[date] = {};
             
-            // --- THIS SECTION IS CORRECTED ---
-            const meditationData = {
-                'meditation.duration': ss.sum(medSessionsByDate[date].duration)
-            };
-            
-            // Check for distractions data before calculating mean
-            const distractionsData = medSessionsByDate[date].distractions.filter(v => v != null);
-            meditationData['meditation.distractions'] = distractionsData.length > 0 ? ss.mean(distractionsData) : null;
-            
-            // Check for dullness data before calculating mean
-            const dullnessData = medSessionsByDate[date].dullness.filter(v => v != null);
-            meditationData['meditation.dullness'] = dullnessData.length > 0 ? ss.mean(dullnessData) : null;
-            
-            // Check for MIDL marker data before calculating mean
-            const midlData = medSessionsByDate[date].midl.filter(v => v != null);
-            meditationData['meditation.midlMarker'] = midlData.length > 0 ? ss.mean(midlData) : null;
-            // --- END CORRECTION ---
+            const meditationData = {};
+
+            // Aggregate each discovered meditation key
+            discoveredMeditationKeys.forEach(key => {
+                const keyData = medSessionsByDate[date][key]?.filter(v => v != null); // Filter out null values
+                if (keyData && keyData.length > 0) {
+                    // Use sum for 'duration', mean for others (or customize logic as needed)
+                    if (key === 'durationSeconds') {
+                        meditationData[`meditation.${key}`] = ss.sum(keyData);
+                    } else {
+                        meditationData[`meditation.${key}`] = ss.mean(keyData);
+                    }
+                } else {
+                    meditationData[`meditation.${key}`] = null; // No valid data
+                }
+            });
           
             Object.assign(processedDataForCorrelation[date], meditationData);
             Object.keys(meditationData).forEach(key => allDiscoveredKeys.add(key));
         }
 
         // Loop through all processed data and apply any matching cleaning rules.
+        for (const key of allDiscoveredKeys) {
+            console.log(key)
+            if (dataCleaningRules[key] == "Delete") {
+                console.log(key)
+                // If the rule is "Delete", remove the key from all processed data
+                for (const date in processedDataForCorrelation) {
+                    delete processedDataForCorrelation[date][key];
+                }
+                allDiscoveredKeys.delete(key); // Remove from discovered keys
+            }
+        }
+
         for (const date in processedDataForCorrelation) {
             for (const key in processedDataForCorrelation[date]) {
+                console.log(key)
                 if (dataCleaningRules[key]) {
                     const originalValue = processedDataForCorrelation[date][key];
                     processedDataForCorrelation[date][key] = dataCleaningRules[key](originalValue);

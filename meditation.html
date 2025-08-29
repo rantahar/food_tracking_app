@@ -81,6 +81,21 @@
         <button class="emoji-btn" data-value="5">😁</button>
       </div>
     </div>
+
+    <!-- ===== NOTIFICATION REMINDER SECTION START ===== -->
+    <div class="section-btn" style="cursor: default;">
+        <h2 class="text-xl mb-2">🔔 Hourly Reminder</h2>
+        <p class="text-gray-500 mb-4 text-sm">Get a notification to practice every hour.</p>
+        <div id="reminder-status" class="mb-4 p-2 rounded-md bg-gray-100 text-sm">
+            Awaiting permission...
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <button id="permission-btn" class="btn-secondary w-full py-2">Grant Permission</button>
+            <button id="start-btn" class="btn-main w-full py-2" disabled>Start</button>
+            <button id="stop-btn" class="btn-secondary w-full py-2 bg-red-100 border-red-300 text-red-700" disabled>Stop</button>
+        </div>
+    </div>
+    <!-- ===== NOTIFICATION REMINDER SECTION END ===== -->
   </div>
 
   <div id="feedback-toast" class="feedback"></div>
@@ -107,6 +122,8 @@
     let userId = null;
     let unsubscribeSnapshot = null;
     let currentHabitData = { bed: false, snack: 0, mood: 0 };
+    let reminderIntervalId = null;
+    const REMINDER_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
     // --- DOM Elements ---
     const authContainer = document.getElementById('auth-container');
@@ -118,6 +135,43 @@
     const logoutBtn = document.getElementById('logout-btn');
     const userEmailSpan = document.getElementById('user-email');
     const toast = document.getElementById('feedback-toast');
+    // Notification elements
+    const permissionBtn = document.getElementById('permission-btn');
+    const startBtn = document.getElementById('start-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    const reminderStatusDiv = document.getElementById('reminder-status');
+
+    // --- SERVICE WORKER LOGIC ---
+    const swCode = `
+        self.addEventListener('notificationclick', (event) => {
+            event.notification.close();
+            event.waitUntil(
+                clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+                    if (clientList.length > 0) {
+                        let client = clientList[0];
+                        for (let i = 0; i < clientList.length; i++) {
+                            if (clientList[i].focused) {
+                                client = clientList[i];
+                            }
+                        }
+                        return client.focus();
+                    }
+                    return clients.openWindow('/');
+                })
+            );
+        });
+    `;
+    const swBlob = new Blob([swCode], { type: 'application/javascript' });
+    const swUrl = URL.createObjectURL(swBlob);
+
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register(swUrl).then(registration => {
+            console.log('Service Worker registered successfully:', registration);
+        }).catch(error => {
+            console.error('Service Worker registration failed:', error);
+            reminderStatusDiv.textContent = 'Service Worker failed to register.';
+        });
+    }
 
     // --- UI Update Functions ---
     const showFeedback = (message, isError = false) => {
@@ -128,7 +182,7 @@
     }
 
     const updateHabitsUI = () => {
-        const { bed, meditation, snack, mood } = currentHabitData;
+        const { bed, snack, mood } = currentHabitData;
 
         const bedBtn = document.getElementById('bed-btn');
         bedBtn.classList.toggle('btn-active', bed);
@@ -140,6 +194,36 @@
             btn.classList.toggle('emoji-selected', mood === parseInt(btn.dataset.value));
         });
     };
+
+    const updateReminderUI = () => {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            reminderStatusDiv.textContent = 'Notifications not supported.';
+            permissionBtn.disabled = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = true;
+            return;
+        }
+
+        switch (Notification.permission) {
+            case 'granted':
+                reminderStatusDiv.textContent = reminderIntervalId ? 'Reminders are active.' : 'Permission granted.';
+                permissionBtn.disabled = true;
+                startBtn.disabled = !!reminderIntervalId;
+                stopBtn.disabled = !reminderIntervalId;
+                break;
+            case 'denied':
+                reminderStatusDiv.textContent = 'Permission denied in settings.';
+                permissionBtn.disabled = true;
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+                break;
+            default:
+                reminderStatusDiv.textContent = 'Awaiting permission...';
+                permissionBtn.disabled = false;
+                startBtn.disabled = true;
+                stopBtn.disabled = true;
+        }
+    }
     
     // --- Data Logic Functions ---
     const getTodaysDateString = () => new Date().toISOString().split('T')[0];
@@ -164,9 +248,9 @@
         const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
 
         unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
-            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
-            if (docSnap.exists()) {
-                currentHabitData = docSnap.data().habits || defaultData;
+            const defaultData = { bed: false, snack: 0, mood: 0 };
+            if (docSnap.exists() && docSnap.data().habits) {
+                currentHabitData = { ...defaultData, ...docSnap.data().habits };
             } else {
                 currentHabitData = defaultData;
             }
@@ -195,6 +279,18 @@
         updateHabitsUI();
         saveHabitDataToFirestore();
     }
+
+    // --- Notification Functions ---
+    const showNotification = () => {
+        navigator.serviceWorker.ready.then(registration => {
+            registration.showNotification('Mindfulness Reminder', {
+                body: 'Time for a mindful breath.',
+                icon: 'https://placehold.co/192x192/348a7b/ffffff?text=🧘',
+                badge: 'https://placehold.co/96x96/348a7b/ffffff?text=🧘',
+                vibrate: [200, 100, 200],
+            });
+        });
+    }
     
     // --- Initialization & Auth Listeners ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -210,15 +306,19 @@
             authContainer.classList.add('hidden');
             appContainer.classList.remove('hidden');
             listenToTodaysData();
+            updateReminderUI();
           } else {
             userId = null;
             userEmailSpan.textContent = '';
             if(unsubscribeSnapshot) unsubscribeSnapshot();
-            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
+            const defaultData = { bed: false, snack: 0, mood: 0 };
             currentHabitData = defaultData;
             updateHabitsUI();
             authContainer.classList.remove('hidden');
             appContainer.classList.add('hidden');
+            if (reminderIntervalId) clearInterval(reminderIntervalId);
+            reminderIntervalId = null;
+            updateReminderUI();
           }
         });
 
@@ -248,6 +348,24 @@
         document.getElementById('mood-buttons').addEventListener('click', e => {
             if (e.target.matches('.emoji-btn')) {
                 window.setHabit('mood', parseInt(e.target.dataset.value));
+            }
+        });
+
+        // Event listeners for reminder buttons
+        permissionBtn.addEventListener('click', () => {
+            Notification.requestPermission().then(() => updateReminderUI());
+        });
+        startBtn.addEventListener('click', () => {
+            if (reminderIntervalId) return;
+            showNotification(); 
+            reminderIntervalId = setInterval(showNotification, REMINDER_INTERVAL_MS);
+            updateReminderUI();
+        });
+        stopBtn.addEventListener('click', () => {
+            if (reminderIntervalId) {
+                clearInterval(reminderIntervalId);
+                reminderIntervalId = null;
+                updateReminderUI();
             }
         });
 
