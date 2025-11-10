@@ -83,7 +83,181 @@
     </div>
   </div>
 
-  <div id="feedback-toast" class="feedback"></div>
+
+<div id="notificationBanner" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    z-index: 10000;
+    display: none;
+">
+    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+        📬 Enable Notifications
+    </div>
+    <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+        Get hourly reminders
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <button id="allowNotifications" style="
+            flex: 1;
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        ">Allow</button>
+        <button id="dismissNotifications" style="
+            flex: 1;
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        ">Dismiss</button>
+    </div>
+</div>
+
+<!-- Status Indicator -->
+<div id="notificationStatus" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 10000;
+    display: none;
+    cursor: default;
+">
+    🔔 Active
+</div>
+
+<script>
+(function() {
+    const bannerEl = document.getElementById('notificationBanner');
+    const allowBtn = document.getElementById('allowNotifications');
+    const dismissBtn = document.getElementById('dismissNotifications');
+    const statusEl = document.getElementById('notificationStatus');
+    
+    const DISMISSED_KEY = 'notification-banner-dismissed';
+    const LAST_HOUR_KEY = 'notification-last-hour';
+    
+    let hourlyCheckInterval = null;
+    
+    function isNotificationSupported() {
+        return 'Notification' in window && 'permission' in Notification;
+    }
+    
+    function init() {
+        if (!isNotificationSupported()) {
+            console.log('Notifications not supported');
+            return;
+        }
+        
+        const permission = Notification.permission;
+        const dismissed = localStorage.getItem(DISMISSED_KEY);
+        
+        if (permission === 'granted') {
+            statusEl.style.display = 'block';
+            startHourlyCheck();
+        } else if (permission === 'default' && !dismissed) {
+            bannerEl.style.display = 'block';
+            setupBannerButtons();
+        }
+    }
+    
+    function setupBannerButtons() {
+        allowBtn.addEventListener('click', async () => {
+            const permission = await Notification.requestPermission();
+            
+            if (permission === 'granted') {
+                bannerEl.style.display = 'none';
+                statusEl.style.display = 'block';
+                startHourlyCheck();
+                
+                setTimeout(() => {
+                    new Notification('Notifications Enabled! 🎉', {
+                        body: 'You will receive a notification every hour.',
+                        icon: '📬',
+                        tag: 'enabled-success'
+                    });
+                }, 500);
+            }
+        });
+        
+        dismissBtn.addEventListener('click', () => {
+            localStorage.setItem(DISMISSED_KEY, 'true');
+            bannerEl.style.display = 'none';
+        });
+    }
+    
+    function startHourlyCheck() {
+        // Check immediately on load
+        checkAndNotify();
+        
+        // Then check every minute (in case tab was closed during the hour)
+        hourlyCheckInterval = setInterval(checkAndNotify, 60000);
+    }
+    
+    function checkAndNotify() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const lastHour = localStorage.getItem(LAST_HOUR_KEY);
+        
+        // Send notification if hour has changed
+        if (lastHour !== String(currentHour)) {
+            sendHourlyNotification();
+            localStorage.setItem(LAST_HOUR_KEY, String(currentHour));
+        }
+    }
+    
+    function sendHourlyNotification() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        
+        new Notification('⏰ Hourly Check-in', {
+            body: `It's ${timeString}. How are you doing?`,
+            icon: '📬',
+            tag: 'hourly-checkin',
+            requireInteraction: false
+        });
+    }
+    
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+        if (hourlyCheckInterval) clearInterval(hourlyCheckInterval);
+    });
+    
+    // Start when page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
+
 
   <script type="module">
     // --- Firebase SDK Imports ---
@@ -230,6 +404,7 @@
                 showFeedback(`Login failed: ${error.message}`, true);
             }
         });
+        
 
         signupBtn.addEventListener('click', async () => {
             try {
