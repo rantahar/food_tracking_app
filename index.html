@@ -57,15 +57,13 @@
     
     <div id="calorie-display">
       <div>Total Calories</div>
-      <div class="cal-text"><span id="cal-current">0</span> / <span id="cal-target">0</span> kcal</div>
+      <div class="cal-text"><span id="cal-current">0</span> / <span id="cal-target">2200</span> kcal</div>
       <progress id="calorie-progress" class="w-full h-3 rounded-lg progress-bar mb-4" value="0"></progress>
     </div>
 
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="card"><h2 class="text-xl font-semibold mb-2">🍗 Protein</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="protein-current">0</span> / <span id="protein-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 25g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('protein',1)" class="btn-control">+1</button><button onclick="window.addPortion('protein',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('protein',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('protein',-1)" class="btn-control">-1</button></div></div>
-      <div class="card"><h2 class="text-xl font-semibold mb-2">🥗 Veggies</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="veggies-current">0</span> / <span id="veggies-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 250-500g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('veggies',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('veggies',0.25)" class="btn-control">+0.25</button><button onclick="window.addPortion('veggies',-0.25)" class="btn-control">-0.25</button><button onclick="window.addPortion('veggies',-0.5)" class="btn-control">-0.5</button></div></div>
-      <div class="card"><h2 class="text-xl font-semibold mb-2">🍞 Carbs</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="carbs-current">0</span> / <span id="carbs-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 25g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('carbs',1)" class="btn-control">+1</button><button onclick="window.addPortion('carbs',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('carbs',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('carbs',-1)" class="btn-control">-1</button></div></div>
-      <div class="card"><h2 class="text-xl font-semibold mb-2">🥑 Fat</h2><div class="text-lg font-medium text-gray-600 mb-2"><span id="fat-current">0</span> / <span id="fat-target-display"></span> Portions</div><div class="text-sm text-gray-500 mb-2">(1 Portion ≈ 11g)</div><div class="grid grid-cols-4 gap-2 mt-auto"><button onclick="window.addPortion('fat',1)" class="btn-control">+1</button><button onclick="window.addPortion('fat',0.5)" class="btn-control">+0.5</button><button onclick="window.addPortion('fat',-0.5)" class="btn-control">-0.5</button><button onclick="window.addPortion('fat',-1)" class="btn-control">-1</button></div></div>
+    <section class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div class="card"><h2 class="text-2xl font-semibold mb-4 text-center">Add 100 kcal Portions</h2><div class="grid grid-cols-2 gap-3 mt-auto"><button onclick="window.addCalories(100)" class="btn-control text-lg py-3">+100</button><button onclick="window.addCalories(200)" class="btn-control text-lg py-3">+200</button><button onclick="window.addCalories(300)" class="btn-control text-lg py-3">+300</button><button onclick="window.addCalories(-100)" class="btn-control text-lg py-3">-100</button></div></div>
+      <div class="card"><h2 class="text-2xl font-semibold mb-4 text-center">Quick Entry</h2><div class="space-y-2"><input type="number" id="quick-calorie-input" placeholder="Enter kcal" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700"><button onclick="window.addQuickCalories()" class="btn-main w-full">Add</button></div></div>
     </section>
     
     <section class="mb-6 bg-white p-4 rounded-xl shadow-md">
@@ -95,8 +93,7 @@
     };
 
     let db, auth, userId = null, unsubscribeSnapshot = null;
-    const targets = { protein: 5, veggies: 2, carbs: 8, fat: 7 };
-    let currentFoodData = { protein: 0, veggies: 0, carbs: 0, fat: 0 };
+    let currentFoodData = { calories: 0 };
 
     const authContainer = document.getElementById('auth-container'), appContainer = document.getElementById('app-container'), emailInput = document.getElementById('email-input'), passwordInput = document.getElementById('password-input'), loginBtn = document.getElementById('login-btn'), signupBtn = document.getElementById('signup-btn'), logoutBtn = document.getElementById('logout-btn'), userEmailSpan = document.getElementById('user-email'), toast = document.getElementById('feedback-toast'), weightInput = document.getElementById('weight-input'), saveWeightBtn = document.getElementById('save-weight-btn');
 
@@ -108,22 +105,13 @@
     }
 
     const updateUI = () => {
-      Object.keys(targets).forEach(k => {
-        const val = currentFoodData[k] !== undefined ? +currentFoodData[k].toFixed(2) : 0;
-        document.getElementById(`${k}-current`).textContent = val;
-        document.getElementById(`${k}-target-display`).textContent = targets[k];
-      });
-      updateCalories();
-    };
-
-    const updateCalories = () => {
-      const calCur = Object.values(currentFoodData).reduce((sum, v) => sum + v, 0) * 100;
-      const calTar = Object.values(targets).reduce((sum, v) => sum + v, 0) * 100;
-      document.getElementById('cal-current').textContent = Math.round(calCur);
-      document.getElementById('cal-target').textContent = Math.round(calTar);
+      const calorieTarget = 2200;
+      const calories = currentFoodData.calories || 0;
+      document.getElementById('cal-current').textContent = Math.round(calories);
+      document.getElementById('cal-target').textContent = calorieTarget;
       const progress = document.getElementById('calorie-progress');
-      progress.value = calCur;
-      progress.max = calTar;
+      progress.value = calories;
+      progress.max = calorieTarget;
     };
     
     const getTodaysDateString = () => new Date().toISOString().split('T')[0];
@@ -141,8 +129,8 @@
     };
     
     const saveFoodData = () => {
-        const totalCalories = Math.round(Object.values(currentFoodData).reduce((sum, v) => sum + v, 0) * 100);
-        saveDataToFirestore({ food: currentFoodData, totalCalories });
+        const calories = currentFoodData.calories || 0;
+        saveDataToFirestore({ food: currentFoodData, totalCalories: Math.round(calories) });
     };
 
     const saveWeight = () => {
@@ -158,7 +146,7 @@
         const dateStr = getTodaysDateString();
         const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
         unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
-            currentFoodData = { protein: 0, veggies: 0, carbs: 0, fat: 0 };
+            currentFoodData = { calories: 0 };
             weightInput.value = '';
             if (docSnap.exists()) {
                 const data = docSnap.data();
@@ -172,10 +160,20 @@
         });
     };
     
-    window.addPortion = (type, amt) => {
-      currentFoodData[type] = Math.max(0, (currentFoodData[type] || 0) + amt);
+    window.addCalories = (amount) => {
+      currentFoodData.calories = Math.max(0, (currentFoodData.calories || 0) + amount);
       updateUI();
       saveFoodData();
+    };
+
+    window.addQuickCalories = () => {
+      const inputVal = document.getElementById('quick-calorie-input').value.trim();
+      if (!inputVal || isNaN(inputVal)) {
+        showFeedback("Please enter a valid number.", true);
+        return;
+      }
+      window.addCalories(parseInt(inputVal, 10));
+      document.getElementById('quick-calorie-input').value = '';
     };
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -195,7 +193,7 @@
             userId = null;
             userEmailSpan.textContent = '';
             if(unsubscribeSnapshot) unsubscribeSnapshot();
-            currentFoodData = { protein: 0, veggies: 0, carbs: 0, fat: 0 };
+            currentFoodData = { calories: 0 };
             weightInput.value = '';
             updateUI();
             authContainer.classList.remove('hidden');
