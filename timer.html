@@ -94,6 +94,13 @@
 
     }
 
+    /* Checkbox Style */
+    input[type="checkbox"] {
+        accent-color: #348a7b;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+
   </style>
 
 </head>
@@ -178,6 +185,11 @@
 
         </div>
 
+      </div>
+
+      <div class="flex items-center justify-center gap-3 mb-8 bg-white px-6 py-3 rounded-full shadow-sm">
+        <input type="checkbox" id="rain-toggle" checked>
+        <label for="rain-toggle" class="text-xl text-gray-700 font-semibold cursor-pointer select-none">Play Heavy Rain</label>
       </div>
 
       <button id="start-btn" class="btn-main text-2xl">Start</button>
@@ -720,6 +732,8 @@
 
         releaseWakeLock();
 
+        toggleRain(false);
+
         finalSessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
 
         finalDurationSpan.textContent = formatTime(finalSessionDuration);
@@ -873,6 +887,61 @@
         }
 
     });
+
+    // --- Pink Noise Generator (Rain) ---
+    let noiseCtx;
+    let noiseNode;
+
+    const toggleRain = (enable) => {
+        // Stop logic
+        if (!enable) {
+            if (noiseCtx) {
+                try { noiseCtx.close(); } catch(e){}
+                noiseCtx = null;
+            }
+            return;
+        }
+
+        // Start Logic
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        noiseCtx = new AudioContext();
+
+        // Buffer size of 4096 is a standard for script processors
+        const bufferSize = 4096;
+        noiseNode = noiseCtx.createScriptProcessor(bufferSize, 1, 1);
+
+        noiseNode.onaudioprocess = function(e) {
+            const output = e.outputBuffer.getChannelData(0);
+            
+            // Paul Kellett's Pink Noise Algorithm variables
+            let b0, b1, b2, b3, b4, b5, b6;
+            // Restore state or init
+            if (!this.b0) { b0=b1=b2=b3=b4=b5=b6=0.0; } 
+            else { b0=this.b0; b1=this.b1; b2=this.b2; b3=this.b3; b4=this.b4; b5=this.b5; b6=this.b6; }
+
+            for (let i = 0; i < bufferSize; i++) {
+                const white = Math.random() * 2 - 1;
+                b0 = 0.99886 * b0 + white * 0.0555179;
+                b1 = 0.99332 * b1 + white * 0.0750759;
+                b2 = 0.96900 * b2 + white * 0.1538520;
+                b3 = 0.86650 * b3 + white * 0.3104856;
+                b4 = 0.55000 * b4 + white * 0.5329522;
+                b5 = -0.7616 * b5 - white * 0.0168980;
+                const outputSample = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
+                b6 = white * 0.115926;
+                output[i] = outputSample * 0.15; // Volume scaling (0.15 is good for rain)
+            }
+            // Save state
+            this.b0=b0; this.b1=b1; this.b2=b2; this.b3=b3; this.b4=b4; this.b5=b5; this.b6=b6;
+        };
+
+        noiseNode.connect(noiseCtx.destination);
+    };
+
+    const rainToggle = document.getElementById('rain-toggle');
+    if (rainToggle && rainToggle.checked) {
+        toggleRain(true);
+    }
 
   </script>
 
