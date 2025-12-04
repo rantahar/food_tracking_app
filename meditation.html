@@ -1,276 +1,436 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meditation</title>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
-            --accent-color: #bb86fc;
-        }
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-        .container {
-            text-align: center;
-            width: 100%;
-            max-width: 400px;
-        }
-        /* Big timer display */
-        #display {
-            font-size: 6rem;
-            font-weight: 300;
-            font-variant-numeric: tabular-nums;
-            margin-bottom: 2rem;
-            user-select: none;
-        }
-        /* Clean input area */
-        .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 1.5rem;
-            align-items: center;
-        }
-        .input-group {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            font-size: 1.5rem;
-        }
-        input[type="number"] {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid var(--accent-color);
-            color: var(--text-color);
-            font-size: 2rem;
-            width: 80px;
-            text-align: center;
-            outline: none;
-        }
-        /* Buttons */
-        button {
-            background-color: var(--accent-color);
-            color: #000;
-            border: none;
-            padding: 1rem 3rem;
-            font-size: 1.5rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: opacity 0.2s;
-        }
-        button:active { opacity: 0.8; }
-        button.secondary {
-            background-color: transparent;
-            border: 2px solid #333;
-            color: #888;
-            padding: 0.5rem 1.5rem;
-            font-size: 1rem;
-            margin-top: 1rem;
-        }
-        /* Checkbox for rain */
-        .rain-toggle {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            color: #aaa;
-        }
-        input[type="checkbox"] {
-            transform: scale(1.5);
-            accent-color: var(--accent-color);
-        }
-        /* Active State (Dim the UI) */
-        body.running .input-group, 
-        body.running .start-btn,
-        body.running .rain-toggle {
-            display: none;
-        }
-        body.running #display {
-            opacity: 0.6;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Meditation & Habits</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='white'/><path fill='%23348a7b' d='M50,20 C80,20 80,50 50,80 C20,50 20,20 50,20 Z'/></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
+    .btn-main, .btn-secondary { padding: .5rem 1rem; border-radius: .5rem; font-weight: bold; transition: background-color 0.2s; cursor: pointer; }
+    .btn-main { background-color: #348a7b; color: #fff; }
+    .btn-main:hover { background-color: #2a6e62; }
+    .btn-secondary { background-color: #f0f0e6; border: 1px solid #dcdccd; color: #348a7b; }
+    .btn-secondary:hover { background-color: #e9e9d9; }
+    .feedback { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #2d3748; color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); font-size: 0.9rem; z-index: 1000; opacity: 0; transition: opacity 0.5s, transform 0.5s; pointer-events: none; }
+    .feedback.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #auth-container, #app-container { transition: opacity 0.5s ease-in-out; }
+    .hidden { display: none; }
+    .section-btn { display: block; width: 100%; background: white; padding: 1rem; border-radius: .75rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 1rem; text-align: center; cursor: pointer; border: none; transition: background-color 0.2s; }
+    .section-btn:hover { background-color: #f9fafb; }
+    .btn-active { background-color: #4ade80 !important; color: white !important; }
+    .emoji-btn { font-size: 1.5rem; background: none; border: none; cursor: pointer; margin: 0 .25rem; padding: .25rem; border-radius: .5rem; transition: background-color 0.2s, transform 0.2s; }
+    .emoji-selected { background-color: #4ade80; color: white; transform: scale(1.2); }
+    .btn-control { background-color: #eef2f1; color: #374151; border: 1px solid #d1d5db; padding: .5rem .75rem; border-radius: .5rem; }
+    .btn-control:hover { background-color: #e5e7eb; }
+  </style>
 </head>
-<body>
+<body class="text-gray-800">
 
-    <div class="container">
-        <div id="display">00:00</div>
-
-        <div class="controls" id="controls">
-            <div class="input-group">
-                <input type="number" id="minutesInput" value="30" min="1" max="180">
-                <span>min</span>
-            </div>
-
-            <label class="rain-toggle">
-                <input type="checkbox" id="rainCheck" checked>
-                <span>Play Heavy Rain</span>
-            </label>
-
-            <button class="start-btn" onclick="startTimer()">Start Sit</button>
-            
-            <button class="secondary" id="stopBtn" onclick="stopTimer()" style="display:none;">Stop</button>
-        </div>
+  <!-- Authentication Section -->
+  <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
+    <div class="flex justify-center items-center gap-3 mb-6">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-700"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3-2-4-1.5-2-4-2.5-4-4 0-1.5-1.5-3-3-3s-3 1.5-3 3c0 1.5-2.5 2.5-4 4-1 1-2 2-2 4a7 7 0 0 0 7 7Z"/><path d="M12 22c.9 0 1.8-.2 2.6-.5"/><path d="M12 2c.9 0 1.8.2 2.6.5"/><path d="M4.4 16.5c-.3-.8-.5-1.7-.5-2.6"/><path d="M20.1 16.5c.3-.8.5-1.7.5-2.6"/><path d="M8 2c-1.5 2-3 3.5-3 5.5"/><path d="M16 2c1.5 2 3 3.5 3 5.5"/></svg>
+        <h2 class="text-2xl font-bold text-center text-gray-700">Meditation & Habits</h2>
     </div>
+    <div class="space-y-4">
+      <input type="email" id="email-input" placeholder="Email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+      <input type="password" id="password-input" placeholder="Password" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-700">
+    </div>
+    <div class="flex space-x-4 mt-6">
+      <button id="login-btn" class="btn-main w-full">Log In</button>
+      <button id="signup-btn" class="btn-secondary w-full">Sign Up</button>
+    </div>
+  </div>
 
-    <script>
-        let timerInterval;
-        let audioCtx;
-        let rainNode;
-        let wakeLock = null;
+  <!-- Main App Section -->
+  <div id="app-container" class="container mx-auto max-w-2xl p-6 hidden">
+    <header class="text-center mb-6 relative">
+        <div class="flex justify-center items-center gap-3">
+            <h1 class="text-3xl font-bold">Meditation & Habits</h1>
+        </div>
+        <div class="absolute top-0 right-0 flex items-center">
+            <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
+            <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
+        </div>
+    </header>
+    
+    <button id="bed-btn" class="section-btn">
+      <h2 class="text-xl mb-2">🛏️ Slept by 22:00 (Last Night)</h2>
+      <span id="bed-status" class="text-2xl font-bold"></span>
+    </button>
+    <div id="snack-btn" class="section-btn">
+      <h2 class="text-xl mb-2">🍵 Meditation Snacks</h2>
+      <span id="snack-count" class="text-2xl font-bold"></span>
+      <div class="mt-2">
+        <button onclick="event.stopPropagation(); window.modifyHabit('snack', 1)" class="btn-control mr-2">+1</button>
+        <button onclick="event.stopPropagation(); window.modifyHabit('snack', -1)" class="btn-control">-1</button>
+      </div>
+    </div>
+    <div class="section-btn" style="cursor: default;">
+      <h2 class="text-xl mb-2">😊 Mood</h2>
+      <div id="mood-buttons">
+        <button class="emoji-btn" data-value="1">😞</button>
+        <button class="emoji-btn" data-value="2">😐</button>
+        <button class="emoji-btn" data-value="3">😌</button>
+        <button class="emoji-btn" data-value="4">😊</button>
+        <button class="emoji-btn" data-value="5">😁</button>
+      </div>
+    </div>
+  </div>
 
-        const display = document.getElementById('display');
-        const minutesInput = document.getElementById('minutesInput');
-        const stopBtn = document.getElementById('stopBtn');
-        const rainCheck = document.getElementById('rainCheck');
 
-        // --- AUDIO ENGINE: PINK NOISE (RAIN) ---
-        function startRain() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            // Resume context if suspended (browser policy)
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+<div id="notificationBanner" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    z-index: 10000;
+    display: none;
+">
+    <div style="font-weight: 600; margin-bottom: 8px; font-size: 14px;">
+        📬 Enable Notifications
+    </div>
+    <div style="font-size: 13px; color: #666; margin-bottom: 12px; line-height: 1.4;">
+        Get hourly reminders
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <button id="allowNotifications" style="
+            flex: 1;
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        ">Allow</button>
+        <button id="dismissNotifications" style="
+            flex: 1;
+            background: #f0f0f0;
+            color: #333;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        ">Dismiss</button>
+    </div>
+</div>
 
-            const bufferSize = 4096;
-            rainNode = audioCtx.createScriptProcessor(bufferSize, 1, 1);
+<!-- Status Indicator -->
+<div id="notificationStatus" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    z-index: 10000;
+    display: none;
+    cursor: default;
+">
+    🔔 Active
+</div>
 
-            rainNode.onaudioprocess = function(e) {
-                const output = e.outputBuffer.getChannelData(0);
-                let b0, b1, b2, b3, b4, b5, b6;
-                // Initialize state if needed
-                if (!this.b0) { b0=b1=b2=b3=b4=b5=b6=0.0; } 
-                else { b0=this.b0; b1=this.b1; b2=this.b2; b3=this.b3; b4=this.b4; b5=this.b5; b6=this.b6; }
-
-                for (let i = 0; i < bufferSize; i++) {
-                    const white = Math.random() * 2 - 1;
-                    b0 = 0.99886 * b0 + white * 0.0555179;
-                    b1 = 0.99332 * b1 + white * 0.0750759;
-                    b2 = 0.96900 * b2 + white * 0.1538520;
-                    b3 = 0.86650 * b3 + white * 0.3104856;
-                    b4 = 0.55000 * b4 + white * 0.5329522;
-                    b5 = -0.7616 * b5 - white * 0.0168980;
-                    const outputSample = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-                    b6 = white * 0.115926;
-                    output[i] = outputSample * 0.15; // Volume scaling
-                }
-                // Save state
-                this.b0=b0; this.b1=b1; this.b2=b2; this.b3=b3; this.b4=b4; this.b5=b5; this.b6=b6;
-            };
-
-            rainNode.connect(audioCtx.destination);
+<script>
+(function() {
+    const bannerEl = document.getElementById('notificationBanner');
+    const allowBtn = document.getElementById('allowNotifications');
+    const dismissBtn = document.getElementById('dismissNotifications');
+    const statusEl = document.getElementById('notificationStatus');
+    
+    const DISMISSED_KEY = 'notification-banner-dismissed';
+    const LAST_HOUR_KEY = 'notification-last-hour';
+    
+    let hourlyCheckInterval = null;
+    
+    function isNotificationSupported() {
+        return 'Notification' in window && 'permission' in Notification;
+    }
+    
+    function init() {
+        if (!isNotificationSupported()) {
+            console.log('Notifications not supported');
+            return;
         }
-
-        function stopRain() {
-            if (rainNode) {
-                rainNode.disconnect();
-                rainNode = null;
-            }
+        
+        const permission = Notification.permission;
+        const dismissed = localStorage.getItem(DISMISSED_KEY);
+        
+        if (permission === 'granted') {
+            statusEl.style.display = 'block';
+            startHourlyCheck();
+        } else if (permission === 'default' && !dismissed) {
+            bannerEl.style.display = 'block';
+            setupBannerButtons();
         }
-
-        // --- AUDIO ENGINE: SYNTHESIZED BELL ---
-        function playBell() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    
+    function setupBannerButtons() {
+        allowBtn.addEventListener('click', async () => {
+            const permission = await Notification.requestPermission();
             
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-
-            // Bell characteristics
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime); // A4 note
-            // Exponential decay for bell sound
-            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.5, audioCtx.currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
-
-            osc.start();
-            osc.stop(audioCtx.currentTime + 3);
+            if (permission === 'granted') {
+                bannerEl.style.display = 'none';
+                statusEl.style.display = 'block';
+                startHourlyCheck();
+                
+                setTimeout(() => {
+                    new Notification('Notifications Enabled! 🎉', {
+                        body: 'You will receive a notification every hour.',
+                        icon: '📬',
+                        tag: 'enabled-success'
+                    });
+                }, 500);
+            }
+        });
+        
+        dismissBtn.addEventListener('click', () => {
+            localStorage.setItem(DISMISSED_KEY, 'true');
+            bannerEl.style.display = 'none';
+        });
+    }
+    
+    function startHourlyCheck() {
+        // Check immediately on load
+        checkAndNotify();
+        
+        // Then check every minute (in case tab was closed during the hour)
+        hourlyCheckInterval = setInterval(checkAndNotify, 60000);
+    }
+    
+    function checkAndNotify() {
+        const now = new Date();
+        const currentHour = now.getHours();
+        const lastHour = localStorage.getItem(LAST_HOUR_KEY);
+        
+        // Send notification if hour has changed
+        if (lastHour !== String(currentHour)) {
+            sendHourlyNotification();
+            localStorage.setItem(LAST_HOUR_KEY, String(currentHour));
         }
+    }
+    
+    function sendHourlyNotification() {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('en-US', { 
+            hour: 'numeric', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        
+        new Notification('⏰ Hourly Check-in', {
+            body: `It's ${timeString}. How are you doing?`,
+            icon: '📬',
+            tag: 'hourly-checkin',
+            requireInteraction: false
+        });
+    }
+    
+    // Cleanup on unload
+    window.addEventListener('beforeunload', () => {
+        if (hourlyCheckInterval) clearInterval(hourlyCheckInterval);
+    });
+    
+    // Start when page loads
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();
+</script>
 
-        // --- TIMER LOGIC ---
-        async function startTimer() {
-            const minutes = parseInt(minutesInput.value);
-            if (!minutes || minutes <= 0) return;
 
-            // Audio Context must start on user gesture
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (audioCtx.state === 'suspended') await audioCtx.resume();
+  <script type="module">
+    // --- Firebase SDK Imports ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-auth.js";
+    import { getFirestore, doc, onSnapshot, setDoc } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-            // Start Rain
-            if (rainCheck.checked) startRain();
+    // --- Firebase Configuration ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyC46utfui8PM01Aq9L9Qa8NfeV0x4NS8UA",
+      authDomain: "tracker-6e7d9.firebaseapp.com",
+      projectId: "tracker-6e7d9",
+      storageBucket: "tracker-6e7d9.firebasestorage.app",
+      messagingSenderId: "169804357149",
+      appId: "1:169804357149:web:73622756f8fc6e0d6bb0f4",
+      measurementId: "G-E0B6ZVKGNZ"
+    };
 
-            // Request Wake Lock (Keep screen on)
+    // --- Application State and Constants ---
+    let db, auth;
+    let userId = null;
+    let unsubscribeSnapshot = null;
+    let currentHabitData = { bed: false, snack: 0, mood: 0 };
+
+    // --- DOM Elements ---
+    const authContainer = document.getElementById('auth-container');
+    const appContainer = document.getElementById('app-container');
+    const emailInput = document.getElementById('email-input');
+    const passwordInput = document.getElementById('password-input');
+    const loginBtn = document.getElementById('login-btn');
+    const signupBtn = document.getElementById('signup-btn');
+    const logoutBtn = document.getElementById('logout-btn');
+    const userEmailSpan = document.getElementById('user-email');
+    const toast = document.getElementById('feedback-toast');
+
+    // --- UI Update Functions ---
+    const showFeedback = (message, isError = false) => {
+        toast.textContent = message;
+        toast.style.backgroundColor = isError ? '#c53030' : '#2d3748';
+        toast.classList.add('show');
+        setTimeout(() => { toast.classList.remove('show'); }, 3000);
+    }
+
+    const updateHabitsUI = () => {
+        const { bed, meditation, snack, mood } = currentHabitData;
+
+        const bedBtn = document.getElementById('bed-btn');
+        bedBtn.classList.toggle('btn-active', bed);
+        document.getElementById('bed-status').textContent = bed ? 'Done' : 'Not done';
+
+        document.getElementById('snack-count').textContent = snack;
+        
+        document.querySelectorAll('.emoji-btn').forEach(btn => {
+            btn.classList.toggle('emoji-selected', mood === parseInt(btn.dataset.value));
+        });
+    };
+    
+    // --- Data Logic Functions ---
+    const getTodaysDateString = () => new Date().toISOString().split('T')[0];
+
+    const saveHabitDataToFirestore = async () => {
+      if (!userId) return;
+      const dateStr = getTodaysDateString();
+      const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+      try {
+        await setDoc(docRef, { habits: currentHabitData }, { merge: true });
+      } catch (error) {
+        console.error("Error saving habit data: ", error);
+        showFeedback("Error saving data.", true);
+      }
+    };
+    
+    const listenToTodaysData = () => {
+        if (unsubscribeSnapshot) unsubscribeSnapshot();
+        if (!userId) return;
+
+        const dateStr = getTodaysDateString();
+        const docRef = doc(db, 'users', userId, 'daily_logs', dateStr);
+
+        unsubscribeSnapshot = onSnapshot(docRef, (docSnap) => {
+            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
+            if (docSnap.exists()) {
+                currentHabitData = docSnap.data().habits || defaultData;
+            } else {
+                currentHabitData = defaultData;
+            }
+            updateHabitsUI();
+        }, (error) => {
+            console.error("Error listening to data:", error);
+            showFeedback("Error fetching real-time data.", true);
+        });
+    };
+    
+    // --- Global Functions ---
+    window.toggleHabit = (key) => {
+        currentHabitData[key] = !currentHabitData[key];
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    };
+
+    window.modifyHabit = (key, delta) => {
+        currentHabitData[key] = Math.max(0, (currentHabitData[key] || 0) + delta);
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    };
+
+    window.setHabit = (key, value) => {
+        currentHabitData[key] = value;
+        updateHabitsUI();
+        saveHabitDataToFirestore();
+    }
+    
+    // --- Initialization & Auth Listeners ---
+    document.addEventListener('DOMContentLoaded', () => {
+      try {
+        const app = initializeApp(firebaseConfig);
+        db = getFirestore(app);
+        auth = getAuth(app);
+        
+        onAuthStateChanged(auth, (user) => {
+          if (user) {
+            userId = user.uid;
+            userEmailSpan.textContent = user.email;
+            authContainer.classList.add('hidden');
+            appContainer.classList.remove('hidden');
+            listenToTodaysData();
+          } else {
+            userId = null;
+            userEmailSpan.textContent = '';
+            if(unsubscribeSnapshot) unsubscribeSnapshot();
+            const defaultData = { bed: false, meditation: false, snack: 0, mood: 0 };
+            currentHabitData = defaultData;
+            updateHabitsUI();
+            authContainer.classList.remove('hidden');
+            appContainer.classList.add('hidden');
+          }
+        });
+
+        loginBtn.addEventListener('click', async () => {
             try {
-                if ('wakeLock' in navigator) {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                }
-            } catch (err) {
-                console.log('Wake Lock error:', err);
+                await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Logged in successfully!");
+            } catch (error) {
+                showFeedback(`Login failed: ${error.message}`, true);
             }
+        });
+        
 
-            // UI Updates
-            document.body.classList.add('running');
-            stopBtn.style.display = 'inline-block';
-            
-            let secondsRemaining = minutes * 60;
-            updateDisplay(secondsRemaining);
-
-            timerInterval = setInterval(() => {
-                secondsRemaining--;
-                updateDisplay(secondsRemaining);
-
-                if (secondsRemaining <= 0) {
-                    finishSession();
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(timerInterval);
-            stopRain();
-            document.body.classList.remove('running');
-            stopBtn.style.display = 'none';
-            if (wakeLock) {
-                wakeLock.release();
-                wakeLock = null;
+        signupBtn.addEventListener('click', async () => {
+            try {
+                await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
+                showFeedback("Signed up successfully!");
+            } catch (error) {
+                showFeedback(`Signup failed: ${error.message}`, true);
             }
-        }
+        });
 
-        function finishSession() {
-            stopTimer();
-            // Play 3 bells
-            playBell();
-            setTimeout(playBell, 3000);
-            setTimeout(playBell, 6000);
-        }
+        logoutBtn.addEventListener('click', () => signOut(auth));
 
-        function updateDisplay(totalSeconds) {
-            const m = Math.floor(totalSeconds / 60);
-            const s = totalSeconds % 60;
-            display.textContent = `${pad(m)}:${pad(s)}`;
-        }
+        // Event listeners for habit buttons
+        document.getElementById('bed-btn').onclick = () => window.toggleHabit('bed');
+        document.getElementById('snack-btn').onclick = () => window.modifyHabit('snack', 1);
+        document.getElementById('mood-buttons').addEventListener('click', e => {
+            if (e.target.matches('.emoji-btn')) {
+                window.setHabit('mood', parseInt(e.target.dataset.value));
+            }
+        });
 
-        function pad(num) {
-            return num.toString().padStart(2, '0');
-        }
-    </script>
+      } catch (error) {
+        console.error("Firebase initialization failed:", error);
+        showFeedback("Failed to initialize the application.", true);
+      }
+    });
+  </script>
 </body>
 </html>
