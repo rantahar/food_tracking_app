@@ -9,7 +9,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Tone.js for sound synthesis -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
   <style>
     body { font-family: 'Inter', sans-serif; background-color: #f5f5f0; }
@@ -46,11 +45,16 @@
         color: white;
         border-color: #348a7b;
     }
+    /* Checkbox Style */
+    input[type="checkbox"] {
+        accent-color: #348a7b;
+        width: 1.25rem;
+        height: 1.25rem;
+    }
   </style>
 </head>
 <body class="text-gray-800">
 
-  <!-- Authentication Section -->
   <div id="auth-container" class="container mx-auto max-w-sm p-8 mt-16 bg-white rounded-xl shadow-lg">
     <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Meditation Timer</h2>
     <div class="space-y-4">
@@ -63,14 +67,12 @@
     </div>
   </div>
 
-  <!-- Main App Section -->
   <div id="app-container" class="hidden">
     <div class="absolute top-4 right-4 flex items-center">
         <span id="user-email" class="text-sm text-gray-500 mr-4"></span>
         <button id="logout-btn" class="btn-secondary text-sm py-1 px-3">Log Out</button>
     </div>
 
-    <!-- Timer Setup View -->
     <div id="setup-view" class="flex flex-col items-center justify-center min-h-screen p-4">
       <h1 class="text-4xl font-bold mb-8">Meditation Timer</h1>
       <div class="space-y-6 mb-8 text-center">
@@ -89,6 +91,12 @@
             </div>
         </div>
       </div>
+
+      <div class="flex items-center justify-center gap-3 mb-8 bg-white px-6 py-3 rounded-full shadow-sm">
+        <input type="checkbox" id="rain-toggle" checked>
+        <label for="rain-toggle" class="text-xl text-gray-700 font-semibold cursor-pointer select-none">Play Heavy Rain</label>
+      </div>
+
       <button id="start-btn" class="btn-main text-2xl">Start</button>
       <div class="mt-6 flex space-x-4">
         <button id="test-main-bell" class="btn-test">Test Main Bell</button>
@@ -96,14 +104,12 @@
       </div>
     </div>
 
-    <!-- Timer Active View -->
     <div id="timer-view" class="hidden flex flex-col items-center justify-center min-h-screen">
       <div id="timer-display" class="text-8xl font-mono font-bold">00:00</div>
       <div id="chime-message" class="text-2xl mt-4 text-green-700 font-semibold opacity-0 transition-opacity">Chime</div>
       <button id="stop-btn" class="btn-stop text-2xl mt-8">Stop & Review</button>
     </div>
 
-    <!-- Evaluation View -->
     <div id="evaluation-view" class="hidden container mx-auto max-w-lg p-8">
         <h2 class="text-3xl font-bold text-center mb-2">Session Review</h2>
         <p class="text-center text-gray-600 mb-8">Duration: <span id="final-duration"></span></p>
@@ -146,6 +152,10 @@
     let sessionStartTime = 0;
     let finalSessionDuration = 0;
     let wakeLock = null;
+    
+    // Audio Context for Rain
+    let noiseCtx;
+    let noiseNode;
 
     const evaluationMetrics = {
         joy: {
@@ -216,6 +226,7 @@
     const evaluationView = document.getElementById('evaluation-view');
     const chimeTimeInput = document.getElementById('chime-time-input');
     const intervalInput = document.getElementById('interval-input');
+    const rainToggle = document.getElementById('rain-toggle');
     const startBtn = document.getElementById('start-btn');
     const stopBtn = document.getElementById('stop-btn');
     const timerDisplay = document.getElementById('timer-display');
@@ -298,144 +309,21 @@
         }
     };
 
-    // --- Sound Synthesis ---
-    const setupAudio = () => {
-        if (!bellSynth) {
-            bellSynth = new Tone.Synth({
-                oscillator: { type: 'sine' },
-                envelope: { attack: 0.005, decay: 0.1, sustain: 0.3, release: 1 }
-            }).toDestination();
-        }
-    };
-
-    const playBell = (note, duration) => {
-        if (Tone.context.state !== 'running') { Tone.start(); }
-        if (!bellSynth) setupAudio();
-        bellSynth.triggerAttackRelease(note, duration);
-    };
-
-    const resetEvaluationForm = () => {
-        document.querySelectorAll('#evaluation-view input[type="radio"]').forEach(radio => {
-            radio.checked = false;
-        });
-        document.getElementById('midl-marker-input').value = '';
-    };
-
-    // --- Timer Logic ---
-    const startTimer = () => {
-        requestWakeLock();
-        let elapsedSeconds = 0;
-        let mainChimePlayed = false;
-        let intervalChimePlayed = false;
-        const mainChimeTime = parseInt(chimeTimeInput.value, 10) * 60;
-        const intervalTime = parseInt(intervalInput.value, 10) * 60;
-
-        switchView(timerView);
-        timerDisplay.textContent = formatTime(elapsedSeconds);
-        sessionStartTime = Date.now();
-
-        timerIntervalId = setInterval(() => {
-            elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
-            timerDisplay.textContent = formatTime(elapsedSeconds);
-
-            if (!intervalChimePlayed && intervalTime > 0 && elapsedSeconds >= intervalTime) {
-                playBell('G4', "8n");
-                chimeMessage.textContent = 'Interval';
-                chimeMessage.style.opacity = 1;
-                setTimeout(() => chimeMessage.style.opacity = 0, 3000);
-                intervalChimePlayed = true;
+    // --- Pink Noise Generator (Rain) ---
+    const toggleRain = (enable) => {
+        // Stop logic
+        if (!enable) {
+            if (noiseCtx) {
+                try { noiseCtx.close(); } catch(e){}
+                noiseCtx = null;
             }
-
-            if (!mainChimePlayed && mainChimeTime > 0 && elapsedSeconds >= mainChimeTime) {
-                playBell('C4', "8n");
-                chimeMessage.textContent = 'Chime';
-                chimeMessage.style.opacity = 1;
-                setTimeout(() => chimeMessage.style.opacity = 0, 3000);
-                mainChimePlayed = true;
-            }
-        }, 1000);
-    };
-
-    const stopTimer = () => {
-        clearInterval(timerIntervalId);
-        releaseWakeLock();
-        finalSessionDuration = Math.floor((Date.now() - sessionStartTime) / 1000);
-        finalDurationSpan.textContent = formatTime(finalSessionDuration);
-        resetEvaluationForm();
-        switchView(evaluationView);
-    };
-
-    // --- Data Saving ---
-    const saveSession = async () => {
-        if (!userId) { showFeedback("You must be logged in to save.", true); return; }
-        
-        const sessionData = {
-            userId: userId,
-            timestamp: new Date(),
-            durationSeconds: finalSessionDuration,
-            targetChimeMinutes: parseInt(chimeTimeInput.value, 10),
-            intervalMinutes: parseInt(intervalInput.value, 10),
-        };
-
-        // Dynamically add metric data from the form
-        for (const key in evaluationMetrics) {
-            const selectedOption = document.querySelector(`input[name="${key}"]:checked`);
-            sessionData[key] = selectedOption ? parseInt(selectedOption.value, 10) : null;
+            return;
         }
-        
-        const midlMarkerInput = document.getElementById('midl-marker-input');
-        sessionData.midlMarker = midlMarkerInput.value === '' ? null : parseInt(midlMarkerInput.value, 10);
 
-        try {
-            const docRef = await addDoc(collection(db, "users", userId, "meditation_sessions"), sessionData);
-            console.log("Document written with ID: ", docRef.id);
-            showFeedback("Session saved successfully!");
-            switchView(setupView);
-        } catch (error) {
-            console.error("Error saving session: ", error);
-            showFeedback("Failed to save session.", true);
-        }
-    };
+        // Start Logic
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        noiseCtx = new AudioContext();
 
-    // --- Initialization & Auth Listeners ---
-    document.addEventListener('DOMContentLoaded', () => {
-        try {
-            const app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            renderEvaluationOptions();
-            
-            onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    userId = user.uid;
-                    userEmailSpan.textContent = user.email;
-                    authContainer.classList.add('hidden');
-                    appContainer.classList.remove('hidden');
-                    switchView(setupView);
-                } else {
-                    userId = null;
-                    userEmailSpan.textContent = '';
-                    authContainer.classList.remove('hidden');
-                    appContainer.classList.add('hidden');
-                }
-            });
-
-            loginBtn.addEventListener('click', () => signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
-            signupBtn.addEventListener('click', () => createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value).catch(e => showFeedback(e.message, true)));
-            logoutBtn.addEventListener('click', () => signOut(auth));
-
-            startBtn.addEventListener('click', startTimer);
-            stopBtn.addEventListener('click', stopTimer);
-            document.getElementById('save-session-btn').addEventListener('click', saveSession);
-            document.getElementById('test-main-bell').addEventListener('click', () => playBell('C4', '8n'));
-            document.getElementById('test-interval-bell').addEventListener('click', () => playBell('G4', '8n'));
-
-        } catch (error) {
-            console.error("Firebase initialization failed:", error);
-            showFeedback("Failed to initialize the application.", true);
-        }
-    });
-  </script>
-</body>
-</html>
+        // Buffer size of 4096 is a standard for script processors
+        const bufferSize = 4096;
+        noiseNode = noiseCtx.createScriptProcessor
