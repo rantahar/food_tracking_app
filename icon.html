@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SVG Viewer</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+    svg {
+      width: 50vmin; /* Makes the SVG scale with the smaller viewport dimension */
+      height: 50vmin;
+    }
+  </style>
+</head>
+<body>
+  <!-- 
+    This is the decoded SVG code from the favicon link. 
+    You can copy this code to use in other applications or edit it.
+  -->
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>
+    <rect width='100' height='100' rx='20' fill='white'/>
+    <!-- The <g> tag groups the avocado parts so they can be transformed together -->
+    <g transform="translate(0 100) scale(1 -1)">
+        <!-- Avocado Outer Skin -->
+        <path d="M 50,12 C 25,12 20,45 35,78 C 45,98 55,98 65,78 C 80,45 75,12 50,12 Z" fill="#4A6A2C"/>
+        <!-- Avocado Inner Flesh -->
+        <path d="M 50,18 C 30,18 26,48 39,76 C 47,91 53,91 61,76 C 74,48 70,18 50,18 Z" fill="#C3D66B"/>
+        <!-- Avocado Pit -->
+        <circle cx="50" cy="40" r="14" fill="#654321"/>
+        <!-- Pit Highlight -->
+        <path d="M 45 28 A 10 10 0 0 0 39 34" fill="none" stroke="#876744" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </svg>
+</body>
+</html>
